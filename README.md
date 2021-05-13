@@ -2,6 +2,7 @@ LMC CQRS Handlers
 =================
 
 [![cqrs-types](https://img.shields.io/badge/cqrs-types-purple.svg)](https://github.com/lmc-eu/cqrs-types)
+[![Latest Stable Version](https://img.shields.io/packagist/v/lmc/cqrs-handler.svg)](https://packagist.org/packages/lmc/cqrs-handler)
 [![Tests and linting](https://github.com/lmc-eu/cqrs-handler/actions/workflows/tests.yaml/badge.svg)](https://github.com/lmc-eu/cqrs-handler/actions/workflows/tests.yaml)
 [![Coverage Status](https://coveralls.io/repos/github/lmc-eu/cqrs-handler/badge.svg?branch=main)](https://coveralls.io/github/lmc-eu/cqrs-handler?branch=main)
 

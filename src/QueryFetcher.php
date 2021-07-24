@@ -157,7 +157,7 @@ class QueryFetcher implements QueryFetcherInterface
                 );
 
                 if ($this->isHandled && $this->lastError === null) {
-                    $this->decodeResponse();
+                    $this->decodeResponse($query);
                 }
 
                 if ($this->isHandled && $query instanceof ProfileableInterface) {

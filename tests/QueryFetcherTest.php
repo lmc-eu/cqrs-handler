@@ -756,7 +756,7 @@ class QueryFetcherTest extends AbstractTestCase
 
         $decoder = function (int $i) {
             return new CallbackResponseDecoder(
-                'is_string',
+                fn (string $response, $initiator) => is_string($response),
                 fn (string $response) => sprintf('decoder:%d:%s', $i, $response),
             );
         };
@@ -819,7 +819,7 @@ class QueryFetcherTest extends AbstractTestCase
         };
 
         $finalDecoder = new CallbackResponseDecoder(
-            'is_string',
+            fn (string $response, $initiator) => is_string($response),
             fn (string $response) => new DecodedValue(sprintf('final-decoded:%s', $response))
         );
 

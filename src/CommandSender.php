@@ -117,7 +117,7 @@ class CommandSender implements CommandSenderInterface
                 );
 
                 if ($this->isHandled && $this->lastError === null) {
-                    $this->decodeResponse($currentProfileKey);
+                    $this->decodeResponse($command, $currentProfileKey);
                 }
 
                 if ($this->isHandled && $command instanceof ProfileableInterface) {

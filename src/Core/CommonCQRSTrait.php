@@ -3,7 +3,9 @@
 namespace Lmc\Cqrs\Handler\Core;
 
 use Lmc\Cqrs\Handler\ProfilerBag;
+use Lmc\Cqrs\Types\CommandInterface;
 use Lmc\Cqrs\Types\Decoder\ResponseDecoderInterface;
+use Lmc\Cqrs\Types\QueryInterface;
 use Lmc\Cqrs\Types\Utils;
 use Lmc\Cqrs\Types\ValueObject\DecodedValue;
 use Lmc\Cqrs\Types\ValueObject\PrioritizedItem;
@@ -76,7 +78,8 @@ trait CommonCQRSTrait
         $this->isHandled = $isHandled;
     }
 
-    private function decodeResponse(?UuidInterface $currentProfileKey): void
+    /** @param CommandInterface<mixed>|QueryInterface<mixed> $initiator */
+    private function decodeResponse($initiator, ?UuidInterface $currentProfileKey): void
     {
         $currentResponse = $this->lastSuccess;
 
@@ -91,7 +94,7 @@ trait CommonCQRSTrait
         foreach ($this->decoders as $decoderItem) {
             $decoder = $decoderItem->getItem();
 
-            if ($decoder->supports($currentResponse)) {
+            if ($decoder->supports($currentResponse, $initiator)) {
                 $decodedResponse = $decoder->decode($currentResponse);
 
                 if ($decodedResponse instanceof DecodedValue) {

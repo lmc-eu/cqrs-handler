@@ -353,4 +353,26 @@ class CommandSenderTest extends AbstractTestCase
             );
         }
     }
+
+    /**
+     * @test
+     */
+    public function shouldSendConsequentCommand(): void
+    {
+        $commandA = new ProfileableCommandAdapter(new DummyCommand('response-A'), 'command-A');
+        $commandB = new ProfileableCommandAdapter(new DummyCommand('response-B'), 'command-B');
+
+        $this->commandSender->addHandler(new DummySendCommandHandler(), PrioritizedItem::PRIORITY_MEDIUM);
+
+        $decoder = new CallbackResponseDecoder(
+            fn (string $response) => $response === 'response-A',
+            fn (string $responseA) => sprintf('%s:%s', $responseA, $this->commandSender->sendAndReturn($commandB)),
+        );
+
+        $this->commandSender->addDecoder($decoder, PrioritizedItem::PRIORITY_HIGHEST);
+
+        $response = $this->commandSender->sendAndReturn($commandA);
+
+        $this->assertSame('response-A:response-B', $response);
+    }
 }

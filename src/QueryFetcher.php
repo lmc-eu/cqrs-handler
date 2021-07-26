@@ -258,7 +258,7 @@ class QueryFetcher implements QueryFetcherInterface
 
             $this->profilerBag->add($key, $profilerItem);
 
-            $this->stopwatch = new Stopwatch();
+            $this->stopwatch = $this->stopwatch ?? new Stopwatch();
             $this->stopwatch->start($key->toString());
         }
 

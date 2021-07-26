@@ -184,7 +184,7 @@ class CommandSender implements CommandSenderInterface
                 )
             );
 
-            $this->stopwatch = new Stopwatch();
+            $this->stopwatch = $this->stopwatch ?? new Stopwatch();
             $this->stopwatch->start($key->toString());
         }
 

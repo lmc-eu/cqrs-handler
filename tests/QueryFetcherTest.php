@@ -851,4 +851,26 @@ class QueryFetcherTest extends AbstractTestCase
             );
         }
     }
+
+    /**
+     * @test
+     */
+    public function shouldFetchConsequentQuery(): void
+    {
+        $queryA = new ProfileableQueryAdapter(new DummyQuery('response-A'), 'query-A');
+        $queryB = new ProfileableQueryAdapter(new DummyQuery('response-B'), 'query-B');
+
+        $this->queryFetcher->addHandler(new DummyQueryHandler(), PrioritizedItem::PRIORITY_MEDIUM);
+
+        $decoder = new CallbackResponseDecoder(
+            fn (string $response) => $response === 'response-A',
+            fn (string $responseA) => sprintf('%s:%s', $responseA, $this->queryFetcher->fetchAndReturn($queryB)),
+        );
+
+        $this->queryFetcher->addDecoder($decoder, PrioritizedItem::PRIORITY_HIGHEST);
+
+        $response = $this->queryFetcher->fetchAndReturn($queryA);
+
+        $this->assertSame('response-A:response-B', $response);
+    }
 }

@@ -10,6 +10,7 @@ use Lmc\Cqrs\Types\QueryInterface;
 use Lmc\Cqrs\Types\Utils;
 use Lmc\Cqrs\Types\ValueObject\DecodedValue;
 use Lmc\Cqrs\Types\ValueObject\PrioritizedItem;
+use Ramsey\Uuid\UuidInterface;
 use Symfony\Component\Stopwatch\Stopwatch;
 
 trait CommonCQRSTrait
@@ -79,16 +80,16 @@ trait CommonCQRSTrait
     }
 
     /** @param CommandInterface<mixed>|QueryInterface<mixed> $initiator */
-    private function decodeResponse($initiator): void
+    private function decodeResponse($initiator, ?UuidInterface $currentProfileKey): void
     {
         $currentResponse = $this->lastSuccess;
 
-        $profilerId = $initiator instanceof ProfileableInterface
-            ? $initiator->getProfilerId()
+        $profilerKey = $currentProfileKey
+            ? $currentProfileKey->toString()
             : null;
 
-        if ($profilerId) {
-            $this->lastUsedDecoders[$profilerId] = [];
+        if ($profilerKey) {
+            $this->lastUsedDecoders[$profilerKey] = [];
         }
 
         foreach ($this->decoders as $decoderItem) {
@@ -100,8 +101,8 @@ trait CommonCQRSTrait
                 if ($decodedResponse instanceof DecodedValue) {
                     $decodedResponse = $decodedResponse->getValue();
 
-                    if ($profilerId) {
-                        $this->lastUsedDecoders[$profilerId][] = sprintf(
+                    if ($profilerKey) {
+                        $this->lastUsedDecoders[$profilerKey][] = sprintf(
                             '%s<%s, DecodedValue<%s>>',
                             get_class($decoder),
                             Utils::getType($currentResponse),
@@ -113,8 +114,8 @@ trait CommonCQRSTrait
                     break;
                 }
 
-                if ($profilerId) {
-                    $this->lastUsedDecoders[$profilerId][] = sprintf(
+                if ($profilerKey) {
+                    $this->lastUsedDecoders[$profilerKey][] = sprintf(
                         '%s<%s, %s>',
                         get_class($decoder),
                         Utils::getType($currentResponse),

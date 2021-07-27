@@ -117,7 +117,7 @@ class CommandSender implements CommandSenderInterface
                 );
 
                 if ($this->isHandled && $this->lastError === null) {
-                    $this->decodeResponse($command);
+                    $this->decodeResponse($command, $currentProfileKey);
                 }
 
                 if ($this->isHandled && $command instanceof ProfileableInterface) {
@@ -205,7 +205,7 @@ class CommandSender implements CommandSenderInterface
             }
 
             $profilerItem->setHandledBy(get_class($currentHandler));
-            $profilerItem->setDecodedBy($this->lastUsedDecoders[$profilerItem->getProfilerId()]);
+            $profilerItem->setDecodedBy($this->lastUsedDecoders[$currentProfilerKey->toString()]);
 
             if ($this->lastSuccess) {
                 $profilerItem->setResponse($this->lastSuccess);

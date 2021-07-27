@@ -279,7 +279,7 @@ class QueryFetcher implements QueryFetcherInterface
             }
 
             $profilerItem->setHandledBy(get_class($currentHandler));
-            $profilerItem->setDecodedBy($this->lastUsedDecoders);
+            $profilerItem->setDecodedBy($this->lastUsedDecoders[$profilerItem->getProfilerId()]);
 
             if ($query instanceof CacheableInterface) {
                 $profilerItem->setCacheKey($query->getCacheKey());

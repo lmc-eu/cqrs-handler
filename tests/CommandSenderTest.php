@@ -364,15 +364,25 @@ class CommandSenderTest extends AbstractTestCase
 
         $this->commandSender->addHandler(new DummySendCommandHandler(), PrioritizedItem::PRIORITY_MEDIUM);
 
-        $decoder = new CallbackResponseDecoder(
+        $decoderA = new CallbackResponseDecoder(
             fn (string $response) => $response === 'response-A',
-            fn (string $responseA) => sprintf('%s:%s', $responseA, $this->commandSender->sendAndReturn($commandB)),
+            fn (string $responseA) => sprintf('%s:%s', $responseA, $this->commandSender->sendAndReturn($commandB)[0]),
         );
 
-        $this->commandSender->addDecoder($decoder, PrioritizedItem::PRIORITY_HIGHEST);
+        $decoderB = new CallbackResponseDecoder(
+            fn (string $response) => $response === 'response-B',
+            fn (string $response) => [sprintf('decoded:%s', $response)],
+        );
+
+        $this->commandSender->addDecoder($decoderA, PrioritizedItem::PRIORITY_HIGHEST);
+        $this->commandSender->addDecoder($decoderB, PrioritizedItem::PRIORITY_HIGHEST);
 
         $response = $this->commandSender->sendAndReturn($commandA);
 
-        $this->assertSame('response-A:response-B', $response);
+        $this->assertSame('response-A:decoded:response-B', $response);
+
+        foreach ($this->profilerBag->getIterator() as $profilerItem) {
+            $this->assertCount(1, $profilerItem->getDecodedBy());
+        }
     }
 }

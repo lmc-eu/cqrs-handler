@@ -862,15 +862,25 @@ class QueryFetcherTest extends AbstractTestCase
 
         $this->queryFetcher->addHandler(new DummyQueryHandler(), PrioritizedItem::PRIORITY_MEDIUM);
 
-        $decoder = new CallbackResponseDecoder(
+        $decoderA = new CallbackResponseDecoder(
             fn (string $response) => $response === 'response-A',
-            fn (string $responseA) => sprintf('%s:%s', $responseA, $this->queryFetcher->fetchAndReturn($queryB)),
+            fn (string $responseA) => sprintf('%s:%s', $responseA, $this->queryFetcher->fetchAndReturn($queryB)[0]),
         );
 
-        $this->queryFetcher->addDecoder($decoder, PrioritizedItem::PRIORITY_HIGHEST);
+        $decoderB = new CallbackResponseDecoder(
+            fn (string $response) => $response === 'response-B',
+            fn (string $response) => [sprintf('decoded:%s', $response)],
+        );
+
+        $this->queryFetcher->addDecoder($decoderA, PrioritizedItem::PRIORITY_HIGHEST);
+        $this->queryFetcher->addDecoder($decoderB, PrioritizedItem::PRIORITY_HIGHEST);
 
         $response = $this->queryFetcher->fetchAndReturn($queryA);
 
-        $this->assertSame('response-A:response-B', $response);
+        $this->assertSame('response-A:decoded:response-B', $response);
+
+        foreach ($this->profilerBag->getIterator() as $profilerItem) {
+            $this->assertCount(1, $profilerItem->getDecodedBy());
+        }
     }
 }

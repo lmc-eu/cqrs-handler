@@ -7,6 +7,7 @@ use Lmc\Cqrs\Types\Decoder\ResponseDecoderInterface;
 use Lmc\Cqrs\Types\Utils;
 use Lmc\Cqrs\Types\ValueObject\DecodedValue;
 use Lmc\Cqrs\Types\ValueObject\PrioritizedItem;
+use Ramsey\Uuid\UuidInterface;
 use Symfony\Component\Stopwatch\Stopwatch;
 
 trait CommonCQRSTrait
@@ -21,7 +22,7 @@ trait CommonCQRSTrait
 
     private bool $isHandled;
     private ?\Throwable $lastError;
-    /** @var string[] */
+    /** @var array<string, string[]> */
     private array $lastUsedDecoders = [];
 
     private ?Stopwatch $stopwatch;
@@ -75,10 +76,17 @@ trait CommonCQRSTrait
         $this->isHandled = $isHandled;
     }
 
-    private function decodeResponse(): void
+    private function decodeResponse(?UuidInterface $currentProfileKey): void
     {
         $currentResponse = $this->lastSuccess;
-        $this->lastUsedDecoders = [];
+
+        $profilerKey = $currentProfileKey
+            ? $currentProfileKey->toString()
+            : null;
+
+        if ($profilerKey) {
+            $this->lastUsedDecoders[$profilerKey] = [];
+        }
 
         foreach ($this->decoders as $decoderItem) {
             $decoder = $decoderItem->getItem();
@@ -88,23 +96,28 @@ trait CommonCQRSTrait
 
                 if ($decodedResponse instanceof DecodedValue) {
                     $decodedResponse = $decodedResponse->getValue();
-                    $this->lastUsedDecoders[] = sprintf(
-                        '%s<%s, DecodedValue<%s>>',
-                        get_class($decoder),
-                        Utils::getType($currentResponse),
-                        Utils::getType($decodedResponse)
-                    );
+
+                    if ($profilerKey) {
+                        $this->lastUsedDecoders[$profilerKey][] = sprintf(
+                            '%s<%s, DecodedValue<%s>>',
+                            get_class($decoder),
+                            Utils::getType($currentResponse),
+                            Utils::getType($decodedResponse)
+                        );
+                    }
                     $currentResponse = $decodedResponse;
 
                     break;
                 }
 
-                $this->lastUsedDecoders[] = sprintf(
-                    '%s<%s, %s>',
-                    get_class($decoder),
-                    Utils::getType($currentResponse),
-                    Utils::getType($decodedResponse)
-                );
+                if ($profilerKey) {
+                    $this->lastUsedDecoders[$profilerKey][] = sprintf(
+                        '%s<%s, %s>',
+                        get_class($decoder),
+                        Utils::getType($currentResponse),
+                        Utils::getType($decodedResponse)
+                    );
+                }
                 $currentResponse = $decodedResponse;
             }
         }

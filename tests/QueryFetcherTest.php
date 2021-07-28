@@ -851,4 +851,36 @@ class QueryFetcherTest extends AbstractTestCase
             );
         }
     }
+
+    /**
+     * @test
+     */
+    public function shouldFetchConsequentQuery(): void
+    {
+        $queryA = new ProfileableQueryAdapter(new DummyQuery('response-A'), 'query-A');
+        $queryB = new ProfileableQueryAdapter(new DummyQuery('response-B'), 'query-B');
+
+        $this->queryFetcher->addHandler(new DummyQueryHandler(), PrioritizedItem::PRIORITY_MEDIUM);
+
+        $decoderA = new CallbackResponseDecoder(
+            fn (string $response) => $response === 'response-A',
+            fn (string $responseA) => sprintf('%s:%s', $responseA, $this->queryFetcher->fetchAndReturn($queryB)[0]),
+        );
+
+        $decoderB = new CallbackResponseDecoder(
+            fn (string $response) => $response === 'response-B',
+            fn (string $response) => [sprintf('decoded:%s', $response)],
+        );
+
+        $this->queryFetcher->addDecoder($decoderA, PrioritizedItem::PRIORITY_HIGHEST);
+        $this->queryFetcher->addDecoder($decoderB, PrioritizedItem::PRIORITY_HIGHEST);
+
+        $response = $this->queryFetcher->fetchAndReturn($queryA);
+
+        $this->assertSame('response-A:decoded:response-B', $response);
+
+        foreach ($this->profilerBag->getIterator() as $profilerItem) {
+            $this->assertCount(1, $profilerItem->getDecodedBy());
+        }
+    }
 }

@@ -117,7 +117,7 @@ class CommandSender implements CommandSenderInterface
                 );
 
                 if ($this->isHandled && $this->lastError === null) {
-                    $this->decodeResponse();
+                    $this->decodeResponse($currentProfileKey);
                 }
 
                 if ($this->isHandled && $command instanceof ProfileableInterface) {
@@ -184,7 +184,7 @@ class CommandSender implements CommandSenderInterface
                 )
             );
 
-            $this->stopwatch = new Stopwatch();
+            $this->stopwatch = $this->stopwatch ?? new Stopwatch();
             $this->stopwatch->start($key->toString());
         }
 
@@ -197,22 +197,22 @@ class CommandSender implements CommandSenderInterface
         ?UuidInterface $currentProfilerKey,
         SendCommandHandlerInterface $currentHandler
     ): void {
-        if ($this->profilerBag && $currentProfilerKey && ($item = $this->profilerBag->get($currentProfilerKey))) {
+        if ($this->profilerBag && $currentProfilerKey && ($profilerItem = $this->profilerBag->get($currentProfilerKey))) {
             if ($this->stopwatch) {
                 $elapsed = $this->stopwatch->stop($currentProfilerKey->toString());
 
-                $item->setDuration((int) $elapsed->getDuration());
+                $profilerItem->setDuration((int) $elapsed->getDuration());
             }
 
-            $item->setHandledBy(get_class($currentHandler));
-            $item->setDecodedBy($this->lastUsedDecoders);
+            $profilerItem->setHandledBy(get_class($currentHandler));
+            $profilerItem->setDecodedBy($this->lastUsedDecoders[$currentProfilerKey->toString()]);
 
             if ($this->lastSuccess) {
-                $item->setResponse($this->lastSuccess);
+                $profilerItem->setResponse($this->lastSuccess);
             }
 
             if ($this->lastError) {
-                $item->setError($this->lastError);
+                $profilerItem->setError($this->lastError);
             }
         }
     }

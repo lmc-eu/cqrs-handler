@@ -3,6 +3,8 @@
 <!-- There should always be "Unreleased" section at the beginning. -->
 
 ## Unreleased
+
+## 1.0.1 - 2021-07-28
 - Fix stopwatch problem when calling a child query/command
 - Fix profiling used decoders when calling a child query/command
 

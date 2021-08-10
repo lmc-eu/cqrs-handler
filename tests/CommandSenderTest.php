@@ -129,7 +129,7 @@ class CommandSenderTest extends AbstractTestCase
 
         $dummyCommand = new DummyCommand('fresh-data');
         $decoder = new CallbackResponseDecoder(
-            'is_string',
+            fn (string $response, $initiator) => is_string($response),
             fn (string $response) => sprintf('decoded:%s', $response),
         );
 
@@ -150,7 +150,7 @@ class CommandSenderTest extends AbstractTestCase
 
         $dummyCommand = new ProfileableCommandAdapter(new DummyCommand('fresh-data'), $profilerId);
         $decoder = new CallbackResponseDecoder(
-            'is_string',
+            fn (string $response, $initiator) => is_string($response),
             fn (string $response) => sprintf('decoded:%s', $response),
         );
 
@@ -264,7 +264,7 @@ class CommandSenderTest extends AbstractTestCase
 
         $decoder = function (int $i) {
             return new CallbackResponseDecoder(
-                'is_string',
+                fn (string $response, $initiator) => is_string($response),
                 fn (string $response) => sprintf('decoder:%d:%s', $i, $response),
             );
         };
@@ -315,13 +315,13 @@ class CommandSenderTest extends AbstractTestCase
 
         $decoder = function (int $i) {
             return new CallbackResponseDecoder(
-                'is_string',
+                fn (string $response, $initiator) => is_string($response),
                 fn (string $response) => sprintf('decoder:%d:%s', $i, $response),
             );
         };
 
         $finalDecoder = new CallbackResponseDecoder(
-            'is_string',
+            fn (string $response, $initiator) => is_string($response),
             fn (string $response) => new DecodedValue(sprintf('final-decoded:%s', $response))
         );
 

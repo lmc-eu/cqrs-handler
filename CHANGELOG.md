@@ -3,6 +3,8 @@
 <!-- There should always be "Unreleased" section at the beginning. -->
 
 ## Unreleased
+
+## 1.1.0 - 2021-08-10
 - Pass an `$initiator` into `ResponseDecoderInterface::supports` method
 
 ## 1.0.1 - 2021-07-28

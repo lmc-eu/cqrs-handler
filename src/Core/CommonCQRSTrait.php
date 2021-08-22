@@ -7,7 +7,7 @@ use Lmc\Cqrs\Types\CommandInterface;
 use Lmc\Cqrs\Types\Decoder\ResponseDecoderInterface;
 use Lmc\Cqrs\Types\QueryInterface;
 use Lmc\Cqrs\Types\Utils;
-use Lmc\Cqrs\Types\ValueObject\DecodedValue;
+use Lmc\Cqrs\Types\ValueObject\DecodedValueInterface;
 use Lmc\Cqrs\Types\ValueObject\PrioritizedItem;
 use Ramsey\Uuid\UuidInterface;
 use Symfony\Component\Stopwatch\Stopwatch;
@@ -97,7 +97,7 @@ trait CommonCQRSTrait
             if ($decoder->supports($currentResponse, $initiator)) {
                 $decodedResponse = $decoder->decode($currentResponse);
 
-                if ($decodedResponse instanceof DecodedValue) {
+                if ($decodedResponse instanceof DecodedValueInterface) {
                     $decodedResponse = $decodedResponse->getValue();
 
                     if ($profilerKey) {

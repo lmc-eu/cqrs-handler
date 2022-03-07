@@ -48,7 +48,7 @@ class CommandSenderTest extends AbstractTestCase
         $this->commandSender->send(
             $dummyCommand,
             new OnSuccessCallback(fn ($data) => $this->assertSame('fresh-data', $data)),
-            new OnErrorCallback(fn (\Throwable $error) => $this->fail($error->getMessage()))
+            new OnErrorCallback(fn (\Throwable $error) => $this->fail($error->getMessage())),
         );
     }
 
@@ -68,7 +68,7 @@ class CommandSenderTest extends AbstractTestCase
         $this->commandSender->send(
             new ProfileableCommandAdapter($dummyCommand, $profilerId, ['body' => $commandBody]),
             new OnSuccessCallback($this->ignore()),
-            new OnErrorCallback($this->ignore())
+            new OnErrorCallback($this->ignore()),
         );
 
         $this->assertCount(1, $this->profilerBag);
@@ -98,7 +98,7 @@ class CommandSenderTest extends AbstractTestCase
         $this->commandSender->send(
             $dummyCommand,
             new OnSuccessCallback($this->ignore()),
-            new OnErrorCallback($this->ignore())
+            new OnErrorCallback($this->ignore()),
         );
 
         $this->assertCount(0, $this->profilerBag);
@@ -115,7 +115,7 @@ class CommandSenderTest extends AbstractTestCase
         $this->commandSenderWithoutFeatures->send(
             new ProfileableCommandAdapter($dummyCommand, $profilerId),
             new OnSuccessCallback($this->ignore()),
-            new OnErrorCallback($this->ignore())
+            new OnErrorCallback($this->ignore()),
         );
 
         $this->assertCount(0, $this->profilerBag);
@@ -184,7 +184,7 @@ class CommandSenderTest extends AbstractTestCase
         $this->assertCount(0, $this->profilerBag);
 
         $decodedResponse = $this->commandSender->sendAndReturn(
-            new ProfileableCommandAdapter($dummyCommand, $profilerId, ['body' => $commandBody])
+            new ProfileableCommandAdapter($dummyCommand, $profilerId, ['body' => $commandBody]),
         );
 
         $this->assertSame('fresh-data', $decodedResponse);
@@ -237,7 +237,7 @@ class CommandSenderTest extends AbstractTestCase
             public function handle(
                 CommandInterface $command,
                 OnSuccessInterface $onSuccess,
-                OnErrorInterface $onError
+                OnErrorInterface $onError,
             ): void {
                 throw new \Exception(sprintf('Method %s should not be called.', __METHOD__));
             }
@@ -297,7 +297,7 @@ class CommandSenderTest extends AbstractTestCase
                     'Lmc\Cqrs\Types\Decoder\CallbackResponseDecoder<string, string>',
                     'Lmc\Cqrs\Types\Decoder\CallbackResponseDecoder<string, string>',
                 ],
-                $item->getDecodedBy()
+                $item->getDecodedBy(),
             );
         }
     }
@@ -350,7 +350,7 @@ class CommandSenderTest extends AbstractTestCase
             $this->assertHandledBy(DummySendCommandHandler::class, 'string', $item->getHandledBy());
             $this->assertSame(
                 ['Lmc\Cqrs\Types\Decoder\CallbackResponseDecoder<string, DecodedValue<string>>'],
-                $item->getDecodedBy()
+                $item->getDecodedBy(),
             );
         }
     }
@@ -394,7 +394,7 @@ class CommandSenderTest extends AbstractTestCase
     public function shouldUseProfilerBagVerbosity(
         string $verbosity,
         bool $withDecoder,
-        array $expectedAdditionalData
+        array $expectedAdditionalData,
     ): void {
         $this->profilerBag->setVerbosity($verbosity);
 
@@ -419,7 +419,7 @@ class CommandSenderTest extends AbstractTestCase
         $this->assertCount(0, $this->profilerBag);
 
         $decodedResponse = $this->commandSender->sendAndReturn(
-            new ProfileableCommandAdapter($dummyCommand, $profilerId, ['body' => $commandBody])
+            new ProfileableCommandAdapter($dummyCommand, $profilerId, ['body' => $commandBody]),
         );
 
         $this->assertSame($expectedResponse, $decodedResponse);

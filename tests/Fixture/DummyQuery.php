@@ -9,11 +9,8 @@ use Lmc\Cqrs\Types\QueryInterface;
  */
 class DummyQuery implements QueryInterface
 {
-    private string $response;
-
-    public function __construct(string $response)
+    public function __construct(private string $response)
     {
-        $this->response = $response;
     }
 
     public function getRequestType(): string

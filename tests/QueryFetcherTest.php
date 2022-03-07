@@ -75,7 +75,7 @@ class QueryFetcherTest extends AbstractTestCase
             new OnErrorCallback(function (\Throwable $error): void {
                 $this->assertInstanceOf(CqrsExceptionInterface::class, $error);
                 $this->assertInstanceOf(NoQueryHandlerUsedException::class, $error);
-            })
+            }),
         );
     }
 
@@ -94,7 +94,7 @@ class QueryFetcherTest extends AbstractTestCase
         $this->queryFetcher->fetch(
             new CacheableQueryAdapter($dummyQuery, $key, CacheTime::oneMinute()),
             new OnSuccessCallback(fn ($data) => $this->assertSame($cachedValue, $data)),
-            new OnErrorCallback(fn (\Throwable $error) => $this->fail($error->getMessage()))
+            new OnErrorCallback(fn (\Throwable $error) => $this->fail($error->getMessage())),
         );
     }
 
@@ -110,7 +110,7 @@ class QueryFetcherTest extends AbstractTestCase
         $this->queryFetcher->fetch(
             $dummyQuery,
             new OnSuccessCallback(fn ($data) => $this->assertSame('fresh-data', $data)),
-            new OnErrorCallback(fn (\Throwable $error) => $this->fail($error->getMessage()))
+            new OnErrorCallback(fn (\Throwable $error) => $this->fail($error->getMessage())),
         );
     }
 
@@ -131,7 +131,7 @@ class QueryFetcherTest extends AbstractTestCase
         $this->queryFetcher->fetch(
             new CacheableQueryAdapter($dummyQuery, $key, CacheTime::oneMinute()),
             new OnSuccessCallback(fn ($data) => $this->assertSame($cachedValue, $data)),
-            new OnErrorCallback(fn (\Throwable $error) => $this->fail($error->getMessage()))
+            new OnErrorCallback(fn (\Throwable $error) => $this->fail($error->getMessage())),
         );
     }
 
@@ -152,7 +152,7 @@ class QueryFetcherTest extends AbstractTestCase
         $this->queryFetcher->fetch(
             new CacheableQueryAdapter($dummyQuery, $key, CacheTime::oneMinute()),
             new OnSuccessCallback(fn ($data) => $this->assertSame('fresh-data', $data)),
-            new OnErrorCallback(fn (\Throwable $error) => $this->fail($error->getMessage()))
+            new OnErrorCallback(fn (\Throwable $error) => $this->fail($error->getMessage())),
         );
 
         $item = $this->cache->getItem($key->getHashedKey());
@@ -177,7 +177,7 @@ class QueryFetcherTest extends AbstractTestCase
         $this->queryFetcher->fetchFresh(
             new CacheableQueryAdapter($dummyQuery, $key, CacheTime::oneMinute()),
             new OnSuccessCallback(fn ($data) => $this->assertSame('fresh-data', $data)),
-            new OnErrorCallback(fn (\Throwable $error) => $this->fail($error->getMessage()))
+            new OnErrorCallback(fn (\Throwable $error) => $this->fail($error->getMessage())),
         );
 
         $item = $this->cache->getItem($key->getHashedKey());
@@ -203,7 +203,7 @@ class QueryFetcherTest extends AbstractTestCase
             new OnErrorCallback(function (\Throwable $error): void {
                 $this->assertInstanceOf(CqrsExceptionInterface::class, $error);
                 $this->assertInstanceOf(NoQueryHandlerUsedException::class, $error);
-            })
+            }),
         );
     }
 
@@ -223,7 +223,7 @@ class QueryFetcherTest extends AbstractTestCase
             new OnErrorCallback(function (\Throwable $error): void {
                 $this->assertInstanceOf(CqrsExceptionInterface::class, $error);
                 $this->assertInstanceOf(NoQueryHandlerUsedException::class, $error);
-            })
+            }),
         );
     }
 
@@ -247,7 +247,7 @@ class QueryFetcherTest extends AbstractTestCase
             new OnErrorCallback(function (\Throwable $error): void {
                 $this->assertInstanceOf(CqrsExceptionInterface::class, $error);
                 $this->assertInstanceOf(NoQueryHandlerUsedException::class, $error);
-            })
+            }),
         );
     }
 
@@ -271,7 +271,7 @@ class QueryFetcherTest extends AbstractTestCase
             new OnErrorCallback(function (\Throwable $error): void {
                 $this->assertInstanceOf(CqrsExceptionInterface::class, $error);
                 $this->assertInstanceOf(NoQueryHandlerUsedException::class, $error);
-            })
+            }),
         );
     }
 
@@ -292,7 +292,7 @@ class QueryFetcherTest extends AbstractTestCase
         $this->queryFetcher->fetch(
             $query,
             new OnSuccessCallback(fn ($data) => $this->assertSame($cachedValue, $data)),
-            new OnErrorCallback(fn (\Throwable $error) => $this->fail($error->getMessage()))
+            new OnErrorCallback(fn (\Throwable $error) => $this->fail($error->getMessage())),
         );
 
         $this->queryFetcher->disableCache();
@@ -301,7 +301,7 @@ class QueryFetcherTest extends AbstractTestCase
         $this->queryFetcher->fetch(
             $query,
             new OnSuccessCallback(fn ($data) => $this->assertSame('fresh-data', $data)),
-            new OnErrorCallback(fn (\Throwable $error) => $this->fail($error->getMessage()))
+            new OnErrorCallback(fn (\Throwable $error) => $this->fail($error->getMessage())),
         );
 
         $this->queryFetcher->enableCache();
@@ -310,7 +310,7 @@ class QueryFetcherTest extends AbstractTestCase
         $this->queryFetcher->fetch(
             $query,
             new OnSuccessCallback(fn ($data) => $this->assertSame($cachedValue, $data)),
-            new OnErrorCallback(fn (\Throwable $error) => $this->fail($error->getMessage()))
+            new OnErrorCallback(fn (\Throwable $error) => $this->fail($error->getMessage())),
         );
     }
 
@@ -331,14 +331,14 @@ class QueryFetcherTest extends AbstractTestCase
             new DummyQuery('fresh-data'),
             $key,
             CacheTime::oneMinute(),
-            $profilerId
+            $profilerId,
         );
 
         // fetch from cache
         $this->queryFetcher->fetch(
             $query,
             new OnSuccessCallback(fn ($data) => $this->assertSame($cachedValue, $data)),
-            new OnErrorCallback(fn (\Throwable $error) => $this->fail($error->getMessage()))
+            new OnErrorCallback(fn (\Throwable $error) => $this->fail($error->getMessage())),
         );
         $this->assertLastHandledBy(GetCachedHandler::class, 'string', $this->profilerBag->getBag());
 
@@ -349,7 +349,7 @@ class QueryFetcherTest extends AbstractTestCase
         $this->queryFetcher->fetch(
             $query,
             new OnSuccessCallback(fn ($data) => $this->assertSame('fresh-data', $data)),
-            new OnErrorCallback(fn (\Throwable $error) => $this->fail($error->getMessage()))
+            new OnErrorCallback(fn (\Throwable $error) => $this->fail($error->getMessage())),
         );
         $this->assertLastHandledBy(DummyQueryHandler::class, 'string', $this->profilerBag->getBag());
 
@@ -357,7 +357,7 @@ class QueryFetcherTest extends AbstractTestCase
         $this->queryFetcher->fetch(
             $query,
             new OnSuccessCallback(fn ($data) => $this->assertSame('fresh-data', $data)),
-            new OnErrorCallback(fn (\Throwable $error) => $this->fail($error->getMessage()))
+            new OnErrorCallback(fn (\Throwable $error) => $this->fail($error->getMessage())),
         );
         $this->assertLastHandledBy(GetCachedHandler::class, 'string', $this->profilerBag->getBag());
 
@@ -381,14 +381,14 @@ class QueryFetcherTest extends AbstractTestCase
             new DummyQuery('fresh-data'),
             $key,
             CacheTime::oneMinute(),
-            $profilerId
+            $profilerId,
         );
 
         // fetch from cache
         $this->queryFetcher->fetch(
             $query,
             new OnSuccessCallback(fn ($data) => $this->assertSame($cachedValue, $data)),
-            new OnErrorCallback(fn (\Throwable $error) => $this->fail($error->getMessage()))
+            new OnErrorCallback(fn (\Throwable $error) => $this->fail($error->getMessage())),
         );
         $this->assertLastHandledBy(GetCachedHandler::class, 'string', $this->profilerBag->getBag());
 
@@ -399,7 +399,7 @@ class QueryFetcherTest extends AbstractTestCase
         $this->queryFetcher->fetch(
             $query,
             new OnSuccessCallback(fn ($data) => $this->assertSame('fresh-data', $data)),
-            new OnErrorCallback(fn (\Throwable $error) => $this->fail($error->getMessage()))
+            new OnErrorCallback(fn (\Throwable $error) => $this->fail($error->getMessage())),
         );
         $this->assertLastHandledBy(DummyQueryHandler::class, 'string', $this->profilerBag->getBag());
 
@@ -407,7 +407,7 @@ class QueryFetcherTest extends AbstractTestCase
         $this->queryFetcher->fetch(
             $query,
             new OnSuccessCallback(fn ($data) => $this->assertSame('fresh-data', $data)),
-            new OnErrorCallback(fn (\Throwable $error) => $this->fail($error->getMessage()))
+            new OnErrorCallback(fn (\Throwable $error) => $this->fail($error->getMessage())),
         );
         $this->assertLastHandledBy(GetCachedHandler::class, 'string', $this->profilerBag->getBag());
 
@@ -438,7 +438,7 @@ class QueryFetcherTest extends AbstractTestCase
         $this->queryFetcher->fetch(
             new ProfileableQueryAdapter($dummyQuery, $profilerId),
             new OnSuccessCallback($this->ignore()),
-            new OnErrorCallback($this->ignore())
+            new OnErrorCallback($this->ignore()),
         );
 
         $this->assertCount(1, $this->profilerBag);
@@ -478,7 +478,7 @@ class QueryFetcherTest extends AbstractTestCase
                 $profilerId,
             ),
             new OnSuccessCallback($this->ignore()),
-            new OnErrorCallback($this->ignore())
+            new OnErrorCallback($this->ignore()),
         );
 
         $this->assertCount(1, $this->profilerBag);
@@ -522,7 +522,7 @@ class QueryFetcherTest extends AbstractTestCase
                 $profilerId,
             ),
             new OnSuccessCallback($this->ignore()),
-            new OnErrorCallback($this->ignore())
+            new OnErrorCallback($this->ignore()),
         );
 
         $this->assertCount(1, $this->profilerBag);
@@ -552,7 +552,7 @@ class QueryFetcherTest extends AbstractTestCase
         $this->queryFetcher->fetch(
             $dummyQuery,
             new OnSuccessCallback($this->ignore()),
-            new OnErrorCallback($this->ignore())
+            new OnErrorCallback($this->ignore()),
         );
 
         $this->assertCount(0, $this->profilerBag);
@@ -569,7 +569,7 @@ class QueryFetcherTest extends AbstractTestCase
         $this->queryFetcherWithoutFeatures->fetch(
             new ProfileableQueryAdapter($dummyQuery, $profilerId),
             new OnSuccessCallback($this->ignore()),
-            new OnErrorCallback($this->ignore())
+            new OnErrorCallback($this->ignore()),
         );
 
         $this->assertCount(0, $this->profilerBag);
@@ -641,7 +641,7 @@ class QueryFetcherTest extends AbstractTestCase
             new DummyQuery('fresh-data'),
             $key,
             CacheTime::oneMinute(),
-            $profilerId
+            $profilerId,
         );
 
         $decoder = new CallbackResponseDecoder(
@@ -669,7 +669,7 @@ class QueryFetcherTest extends AbstractTestCase
             $this->assertHandledBy(GetCachedHandler::class, 'string', $item->getHandledBy());
             $this->assertSame(
                 ['Lmc\Cqrs\Types\Decoder\CallbackResponseDecoder<string, string>'],
-                $item->getDecodedBy()
+                $item->getDecodedBy(),
             );
         }
     }
@@ -726,7 +726,7 @@ class QueryFetcherTest extends AbstractTestCase
             public function handle(
                 QueryInterface $query,
                 OnSuccessInterface $onSuccess,
-                OnErrorInterface $onError
+                OnErrorInterface $onError,
             ): void {
                 throw new \Exception(sprintf('Method %s should not be called.', __METHOD__));
             }
@@ -755,7 +755,7 @@ class QueryFetcherTest extends AbstractTestCase
             new DummyQuery('fresh-data'),
             $key,
             CacheTime::oneMinute(),
-            $profilerId
+            $profilerId,
         );
 
         $decoder = function (int $i) {
@@ -792,7 +792,7 @@ class QueryFetcherTest extends AbstractTestCase
                     'Lmc\Cqrs\Types\Decoder\CallbackResponseDecoder<string, string>',
                     'Lmc\Cqrs\Types\Decoder\CallbackResponseDecoder<string, string>',
                 ],
-                $item->getDecodedBy()
+                $item->getDecodedBy(),
             );
         }
     }
@@ -812,7 +812,7 @@ class QueryFetcherTest extends AbstractTestCase
             new DummyQuery('fresh-data'),
             $key,
             CacheTime::oneMinute(),
-            $profilerId
+            $profilerId,
         );
 
         $decoder = function (int $i) {
@@ -851,7 +851,7 @@ class QueryFetcherTest extends AbstractTestCase
             $this->assertHandledBy(DummyQueryHandler::class, 'string', $item->getHandledBy());
             $this->assertSame(
                 ['Lmc\Cqrs\Types\Decoder\CallbackResponseDecoder<string, DecodedValue<string>>'],
-                $item->getDecodedBy()
+                $item->getDecodedBy(),
             );
         }
     }
@@ -911,7 +911,7 @@ class QueryFetcherTest extends AbstractTestCase
         $this->queryFetcher->fetch(
             $query,
             $expectsValueOnSuccess('translated[cs]: fresh-data'),
-            $onError
+            $onError,
         );
 
         $item = $this->cache->getItem($key->getHashedKey());
@@ -923,7 +923,7 @@ class QueryFetcherTest extends AbstractTestCase
         $this->queryFetcher->fetch(
             $query,
             $expectsValueOnSuccess('translated[en]: fresh-data'),
-            $onError
+            $onError,
         );
 
         $item = $this->cache->getItem($key->getHashedKey());
@@ -938,7 +938,7 @@ class QueryFetcherTest extends AbstractTestCase
     public function shouldUseProfilerBagVerbosity(
         string $verbosity,
         bool $withDecoder,
-        array $expectedAdditionalData
+        array $expectedAdditionalData,
     ): void {
         $this->profilerBag->setVerbosity($verbosity);
 
@@ -968,7 +968,7 @@ class QueryFetcherTest extends AbstractTestCase
                 $profilerId,
             ),
             new OnSuccessCallback($this->ignore()),
-            new OnErrorCallback($this->ignore())
+            new OnErrorCallback($this->ignore()),
         );
 
         $this->assertCount(1, $this->profilerBag);

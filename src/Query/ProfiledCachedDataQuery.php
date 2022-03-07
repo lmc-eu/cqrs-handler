@@ -12,9 +12,6 @@ use Lmc\Cqrs\Types\ValueObject\CacheTime;
  */
 class ProfiledCachedDataQuery extends CachedDataQuery implements ProfileableInterface
 {
-    private string $profilerId;
-    private ?array $profilerData;
-
     /**
      * @phpstan-param callable(): Data $createData
      */
@@ -22,12 +19,10 @@ class ProfiledCachedDataQuery extends CachedDataQuery implements ProfileableInte
         callable $createData,
         CacheKey $cacheKey,
         CacheTime $cacheTime,
-        string $profilerId,
-        ?array $profilerData = null
+        private string $profilerId,
+        private ?array $profilerData = null,
     ) {
         parent::__construct($createData, $cacheKey, $cacheTime);
-        $this->profilerId = $profilerId;
-        $this->profilerData = $profilerData;
     }
 
     public function getProfilerId(): string

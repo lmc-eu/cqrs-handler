@@ -9,11 +9,8 @@ use Lmc\Cqrs\Types\CommandInterface;
  */
 class DummyCommand implements CommandInterface
 {
-    private string $response;
-
-    public function __construct(string $response)
+    public function __construct(private string $response)
     {
-        $this->response = $response;
     }
 
     public function getRequestType(): string

@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use Lmc\CodingStandard\Sniffs\Naming\ClassNameSuffixByParentSniff;
-use PhpCsFixer\Fixer\Phpdoc\NoSuperfluousPhpdocTagsFixer;
 use PhpCsFixer\Fixer\PhpUnit\PhpUnitTestAnnotationFixer;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Symplify\EasyCodingStandard\ValueObject\Option;
@@ -13,7 +12,9 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $parameters->set(
         Option::SKIP,
-        ['SlevomatCodingStandard\Sniffs\Exceptions\ReferenceThrowableOnlySniff.ReferencedGeneralException' => ['tests/Exception/*.php']]
+        [
+            'SlevomatCodingStandard\Sniffs\Exceptions\ReferenceThrowableOnlySniff.ReferencedGeneralException' => ['tests/Exception/*.php'],
+        ],
     );
 
     $containerConfigurator->import(__DIR__ . '/vendor/lmc/coding-standard/ecs.php');
@@ -26,6 +27,5 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(ClassNameSuffixByParentSniff::class)
         ->property('extraParentTypesToSuffixes', ['*ApplicatorInterface' => 'Applicator']);
 
-    $services->set(NoSuperfluousPhpdocTagsFixer::class)
-        ->call('configure', [['allow_mixed' => true]]);
+    $containerConfigurator->import(__DIR__ . '/vendor/lmc/coding-standard/ecs-8.1.php');
 };

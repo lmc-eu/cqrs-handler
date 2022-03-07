@@ -4,7 +4,9 @@ namespace Lmc\Cqrs\Handler\Core;
 
 use Lmc\Cqrs\Types\CommandInterface;
 use Lmc\Cqrs\Types\Decoder\ResponseDecoderInterface;
+use Lmc\Cqrs\Types\QueryHandlerInterface;
 use Lmc\Cqrs\Types\QueryInterface;
+use Lmc\Cqrs\Types\SendCommandHandlerInterface;
 use Lmc\Cqrs\Types\Utils;
 use Lmc\Cqrs\Types\ValueObject\ProfilerItem;
 use Ramsey\Uuid\Uuid;
@@ -14,22 +16,18 @@ use Symfony\Component\Stopwatch\Stopwatch;
 /**
  * @internal
  *
- * @phpstan-template Initiator
- * @phpstan-template Handler
+ * @phpstan-template Request
  * @phpstan-template Response
  */
 abstract class AbstractContext
 {
     private UuidInterface $key;
-    /**
-     * @phpstan-var Initiator
-     * @var QueryInterface|CommandInterface
-     */
-    private $initiator;
+    /** @phpstan-var QueryInterface<Request>|CommandInterface<Request> */
+    private QueryInterface|CommandInterface $initiator;
 
     private bool $isHandled = false;
-    /** @phpstan-var Handler|null */
-    private $usedHandler;
+    /** @phpstan-var QueryHandlerInterface<Request, Response>|SendCommandHandlerInterface<Request, Response>|null */
+    private QueryHandlerInterface|SendCommandHandlerInterface|null $usedHandler;
     private ?string $handledResponseType = null;
 
     /** @var string[] */
@@ -38,27 +36,18 @@ abstract class AbstractContext
     private ?Stopwatch $stopwatch = null;
 
     private ?\Throwable $error = null;
-    /**
-     * @phpstan-var ?Response
-     * @var ?mixed
-     */
-    private $response;
+    /** @phpstan-var ?Response */
+    private mixed $response = null;
 
-    /**
-     * @phpstan-param Initiator $initiator
-     * @param QueryInterface|CommandInterface $initiator
-     */
-    public function __construct($initiator)
+    /** @phpstan-param QueryInterface<Request>|CommandInterface<Request> $initiator */
+    public function __construct(QueryInterface|CommandInterface $initiator)
     {
         $this->initiator = $initiator;
         $this->key = Uuid::uuid4();
     }
 
-    /**
-     * @phpstan-return Initiator
-     * @return QueryInterface|CommandInterface
-     */
-    public function getInitiator()
+    /** @phpstan-return QueryInterface<Request>|CommandInterface<Request> */
+    public function getInitiator(): QueryInterface|CommandInterface
     {
         return $this->initiator;
     }
@@ -92,20 +81,14 @@ abstract class AbstractContext
         return $this->isHandled;
     }
 
-    /**
-     * @phpstan-param Handler|null $usedHandler
-     * @param mixed $usedHandler
-     */
-    public function setUsedHandler($usedHandler): void
+    /** @phpstan-param QueryHandlerInterface<Request, Response>|SendCommandHandlerInterface<Request, Response>|null $usedHandler */
+    public function setUsedHandler(QueryHandlerInterface|SendCommandHandlerInterface|null $usedHandler): void
     {
         $this->usedHandler = $usedHandler;
     }
 
-    /**
-     * @phpstan-return Handler|null
-     * @return mixed
-     */
-    public function getUsedHandler()
+    /** @phpstan-return QueryHandlerInterface<Request, Response>|SendCommandHandlerInterface<Request, Response>|null */
+    public function getUsedHandler(): QueryHandlerInterface|SendCommandHandlerInterface|null
     {
         return $this->usedHandler;
     }
@@ -120,20 +103,14 @@ abstract class AbstractContext
         return $this->handledResponseType;
     }
 
-    /**
-     * @phpstan-param ?Response $response
-     * @param ?mixed $response
-     */
-    public function setResponse($response): void
+    /** @phpstan-param ?Response $response */
+    public function setResponse(mixed $response): void
     {
         $this->response = $response;
     }
 
-    /**
-     * @phpstan-return ?Response
-     * @return ?mixed
-     */
-    public function getResponse()
+    /** @phpstan-return ?Response */
+    public function getResponse(): mixed
     {
         return $this->response;
     }
@@ -155,16 +132,14 @@ abstract class AbstractContext
      * @phpstan-param ResponseDecoderInterface<T, U> $decoder
      * @phpstan-param T $currentResponse
      * @phpstan-param U $decodedResponse
-     * @param mixed $currentResponse
-     * @param mixed $decodedResponse
      */
-    public function addUsedDecoder(ResponseDecoderInterface $decoder, $currentResponse, $decodedResponse): void
+    public function addUsedDecoder(ResponseDecoderInterface $decoder, mixed $currentResponse, mixed $decodedResponse): void
     {
         $this->usedDecoders[] = sprintf(
             '%s<%s, %s>',
             get_class($decoder),
             Utils::getType($currentResponse),
-            Utils::getType($decodedResponse)
+            Utils::getType($decodedResponse),
         );
     }
 

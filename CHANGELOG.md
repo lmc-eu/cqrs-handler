@@ -3,6 +3,7 @@
 <!-- There should always be "Unreleased" section at the beginning. -->
 
 ## Unreleased
+- Fix profiling last used decoders when there are none
 
 ## 1.2.0 - 2021-08-23
 - Use `DecodedValueInterface` instead of `DecodedValue` to allow different implementations

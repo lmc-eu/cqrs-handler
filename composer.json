@@ -1,8 +1,8 @@
 {
     "name": "lmc/cqrs-handler",
-    "type": "library",
     "description": "A library containing handlers to help with Queries and Commands",
     "license": "MIT",
+    "type": "library",
     "require": {
         "php": "^7.4",
         "ext-json": "*",
@@ -23,9 +23,6 @@
         "phpunit/phpunit": "^9.5",
         "symfony/cache": "^5.2"
     },
-    "config": {
-        "sort-packages": true
-    },
     "autoload": {
         "psr-4": {
             "Lmc\\Cqrs\\Handler\\": "src/"
@@ -35,6 +32,14 @@
         "psr-4": {
             "Lmc\\Cqrs\\Handler\\": "tests/"
         }
+    },
+    "config": {
+        "allow-plugins": {
+            "phpstan/extension-installer": true,
+            "dealerdirect/phpcodesniffer-composer-installer": true,
+            "ergebnis/composer-normalize": true
+        },
+        "sort-packages": true
     },
     "scripts": {
         "all": [

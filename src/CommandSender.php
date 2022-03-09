@@ -205,7 +205,7 @@ class CommandSender implements CommandSenderInterface
             }
 
             $profilerItem->setHandledBy(get_class($currentHandler));
-            $profilerItem->setDecodedBy($this->lastUsedDecoders[$currentProfilerKey->toString()]);
+            $profilerItem->setDecodedBy($this->lastUsedDecoders[$currentProfilerKey->toString()] ?? []);
 
             if ($this->lastSuccess) {
                 $profilerItem->setResponse($this->lastSuccess);

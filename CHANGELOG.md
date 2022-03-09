@@ -3,6 +3,8 @@
 <!-- There should always be "Unreleased" section at the beginning. -->
 
 ## Unreleased
+
+## 1.2.1 - 2022-03-09
 - Fix profiling last used decoders when there are none
 
 ## 1.2.0 - 2021-08-23

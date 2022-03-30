@@ -311,9 +311,11 @@ class QueryFetcher implements QueryFetcherInterface
 
     private function shouldCacheResponse(CacheableInterface $query): bool
     {
+        $hashedKey = $query->getCacheKey()->getHashedKey();
+
         return !($this->usedHandler instanceof GetCachedHandler)
-            && array_key_exists($query->getCacheKey()->getHashedKey(), $this->isAlreadyCached)
-            && !$this->isAlreadyCached[$query->getCacheKey()->getHashedKey()];
+            && array_key_exists($hashedKey, $this->isAlreadyCached)
+            && !$this->isAlreadyCached[$hashedKey];
     }
 
     /**

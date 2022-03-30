@@ -3,6 +3,6 @@
 namespace Lmc\Cqrs\Handler\Core;
 
 // todo - move to the Cqrs\Types
-interface ComplexResponseDecoderInterface
+interface DontCacheDecodedValueInterface
 {
 }

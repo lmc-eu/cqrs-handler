@@ -27,6 +27,7 @@ use Symfony\Component\Stopwatch\Stopwatch;
  */
 class CommandSender implements CommandSenderInterface
 {
+    /** @phpstan-use CommonCQRSTrait<CommandInterface<Request>, SendCommandHandlerInterface<Request, Response>> */
     use CommonCQRSTrait;
 
     /**
@@ -142,9 +143,12 @@ class CommandSender implements CommandSenderInterface
     }
 
     /**
+     * @phpstan-template T
+     * @phpstan-template U
      * @phpstan-param CommandInterface<Request> $initiator
-     * @param mixed $currentResponse
-     * @return mixed
+     * @phpstan-param ResponseDecoderInterface<T, U> $decoder
+     * @phpstan-param T $currentResponse
+     * @phpstan-return U
      */
     private function getDecodedResponse(
         CommandInterface $initiator,

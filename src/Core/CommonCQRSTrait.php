@@ -3,17 +3,17 @@
 namespace Lmc\Cqrs\Handler\Core;
 
 use Lmc\Cqrs\Handler\ProfilerBag;
-use Lmc\Cqrs\Types\CommandInterface;
 use Lmc\Cqrs\Types\Decoder\ResponseDecoderInterface;
-use Lmc\Cqrs\Types\QueryHandlerInterface;
-use Lmc\Cqrs\Types\QueryInterface;
-use Lmc\Cqrs\Types\SendCommandHandlerInterface;
 use Lmc\Cqrs\Types\Utils;
 use Lmc\Cqrs\Types\ValueObject\DecodedValueInterface;
 use Lmc\Cqrs\Types\ValueObject\PrioritizedItem;
 use Ramsey\Uuid\UuidInterface;
 use Symfony\Component\Stopwatch\Stopwatch;
 
+/**
+ * @phpstan-template Initiator
+ * @phpstan-template Handler
+ */
 trait CommonCQRSTrait
 {
     /**
@@ -25,7 +25,7 @@ trait CommonCQRSTrait
     private ?ProfilerBag $profilerBag;
 
     private bool $isHandled;
-    /** @var SendCommandHandlerInterface|QueryHandlerInterface|null */
+    /** @phpstan-var Handler|null */
     private $usedHandler;
 
     private ?\Throwable $lastError;
@@ -78,14 +78,14 @@ trait CommonCQRSTrait
         return $this->decoders;
     }
 
-    /** @param SendCommandHandlerInterface|QueryHandlerInterface $handler */
+    /** @phpstan-param Handler|null $handler */
     private function setIsHandled($handler): void
     {
         $this->isHandled = $handler !== null;
         $this->usedHandler = $handler;
     }
 
-    /** @param CommandInterface<mixed>|QueryInterface<mixed> $initiator */
+    /** @phpstan-param Initiator $initiator */
     private function decodeResponse($initiator, ?UuidInterface $currentProfileKey): void
     {
         $currentResponse = $this->lastSuccess;
@@ -98,30 +98,30 @@ trait CommonCQRSTrait
             $this->lastUsedDecoders[$profilerKey] = [];
         }
 
-        $dump = [
-            'initiator' => Utils::getType($initiator),
-        ];
+        // $dump = [
+        //     'initiator' => Utils::getType($initiator),
+        // ];
 
         $i = -1;
         foreach ($this->decoders as $decoderItem) {
             $i++;
             $decoder = $decoderItem->getItem();
-            $dump['loop_' . $i] = [];
-            $dump['loop_' . $i]['trying decoder'] = Utils::getType($decoder);
+            //$dump['loop_' . $i] = [];
+            //$dump['loop_' . $i]['trying decoder'] = Utils::getType($decoder);
 
             if ($decoder->supports($currentResponse, $initiator)) {
-                $dump['loop_' . $i]['decoder supports response'] = $currentResponse;
+                //$dump['loop_' . $i]['decoder supports response'] = $currentResponse;
                 $decodedResponse = $this->getDecodedResponse(
                     $initiator,
                     $currentProfileKey,
                     $decoder,
                     $currentResponse
                 );
-                $dump['loop_' . $i]['decoder decoded response'] = $decodedResponse;
+                //$dump['loop_' . $i]['decoder decoded response'] = $decodedResponse;
 
-                if (function_exists('dump')) {
-                    call_user_func('dump', [__METHOD__ => $dump]);
-                }
+                //if (function_exists('dump')) {
+                //    call_user_func('dump', [__METHOD__ => $dump]);
+                //}
 
                 if ($decodedResponse instanceof DecodedValueInterface) {
                     $decodedResponse = $decodedResponse->getValue();
@@ -149,9 +149,9 @@ trait CommonCQRSTrait
                 }
                 $currentResponse = $decodedResponse;
             } else {
-                if (function_exists('dump')) {
-                    call_user_func('dump', [__METHOD__ => $dump]);
-                }
+                //if (function_exists('dump')) {
+                //    call_user_func('dump', [__METHOD__ => $dump]);
+                //}
             }
         }
 

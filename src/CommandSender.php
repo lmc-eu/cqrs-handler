@@ -87,7 +87,7 @@ class CommandSender implements CommandSenderInterface
 
     public function send(CommandInterface $command, OnSuccessInterface $onSuccess, OnErrorInterface $onError): void
     {
-        $this->setIsHandled(false);
+        $this->setIsHandled(null);
         $this->lastSuccess = null;
         $this->lastError = null;
 
@@ -106,12 +106,12 @@ class CommandSender implements CommandSenderInterface
             if ($handler->supports($command)) {
                 $handler->handle(
                     $command,
-                    new OnSuccessCallback(function ($response): void {
-                        $this->setIsHandled(true);
+                    new OnSuccessCallback(function ($response) use ($handler): void {
+                        $this->setIsHandled($handler);
                         $this->lastSuccess = $response;
                     }),
-                    new OnErrorCallback(function (\Throwable $error): void {
-                        $this->setIsHandled(true);
+                    new OnErrorCallback(function (\Throwable $error) use ($handler): void {
+                        $this->setIsHandled($handler);
                         $this->lastError = $error;
                     }),
                 );
@@ -139,6 +139,20 @@ class CommandSender implements CommandSenderInterface
         }
 
         $onError(NoSendCommandHandlerUsedException::create($command, $this->handlers));
+    }
+
+    /**
+     * @phpstan-param CommandInterface<Request> $initiator
+     * @param mixed $currentResponse
+     * @return mixed
+     */
+    private function getDecodedResponse(
+        CommandInterface $initiator,
+        ?UuidInterface $currentProfileKey,
+        ResponseDecoderInterface $decoder,
+        $currentResponse
+    ) {
+        return $decoder->decode($currentResponse);
     }
 
     /**

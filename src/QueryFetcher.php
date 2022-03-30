@@ -282,6 +282,7 @@ class QueryFetcher implements QueryFetcherInterface
      * @phpstan-param ResponseDecoderInterface<T, U> $decoder
      * @phpstan-param T $currentResponse
      * @phpstan-return U
+     * @param mixed $currentResponse
      */
     private function getDecodedResponse(
         QueryInterface $initiator,

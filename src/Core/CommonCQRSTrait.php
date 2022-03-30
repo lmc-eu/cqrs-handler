@@ -148,7 +148,7 @@ trait CommonCQRSTrait
                     );
                 }
                 $currentResponse = $decodedResponse;
-            } else {
+                //} else {
                 //if (function_exists('dump')) {
                 //    call_user_func('dump', [__METHOD__ => $dump]);
                 //}

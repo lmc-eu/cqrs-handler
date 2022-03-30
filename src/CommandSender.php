@@ -149,6 +149,7 @@ class CommandSender implements CommandSenderInterface
      * @phpstan-param ResponseDecoderInterface<T, U> $decoder
      * @phpstan-param T $currentResponse
      * @phpstan-return U
+     * @param mixed $currentResponse
      */
     private function getDecodedResponse(
         CommandInterface $initiator,

@@ -81,6 +81,7 @@ trait CommonCQRSTrait
 
     /**
      * @phpstan-param Handler|null $handler
+     * @param mixed $handler
      * @param mixed $response
      */
     private function setIsHandled($handler, ?UuidInterface $currentProfileKey = null, $response = null): void

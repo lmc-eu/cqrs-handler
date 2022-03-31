@@ -9,7 +9,6 @@ use Lmc\Cqrs\Types\Decoder\ResponseDecoderInterface;
 use Lmc\Cqrs\Types\Exception\NoSendCommandHandlerUsedException;
 use Lmc\Cqrs\Types\Feature\ProfileableInterface;
 use Lmc\Cqrs\Types\SendCommandHandlerInterface;
-use Lmc\Cqrs\Types\Utils;
 use Lmc\Cqrs\Types\ValueObject\OnErrorCallback;
 use Lmc\Cqrs\Types\ValueObject\OnErrorInterface;
 use Lmc\Cqrs\Types\ValueObject\OnSuccessCallback;

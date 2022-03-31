@@ -2,7 +2,6 @@
 
 namespace Lmc\Cqrs\Handler;
 
-use Hoa\Math\Util;
 use Lmc\Cqrs\Handler\Core\CommonCQRSTrait;
 use Lmc\Cqrs\Handler\Handler\GetCachedHandler;
 use Lmc\Cqrs\Types\Decoder\ImpureResponseDecoderInterface;

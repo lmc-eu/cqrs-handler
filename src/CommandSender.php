@@ -9,6 +9,7 @@ use Lmc\Cqrs\Types\Decoder\ResponseDecoderInterface;
 use Lmc\Cqrs\Types\Exception\NoSendCommandHandlerUsedException;
 use Lmc\Cqrs\Types\Feature\ProfileableInterface;
 use Lmc\Cqrs\Types\SendCommandHandlerInterface;
+use Lmc\Cqrs\Types\Utils;
 use Lmc\Cqrs\Types\ValueObject\OnErrorCallback;
 use Lmc\Cqrs\Types\ValueObject\OnErrorInterface;
 use Lmc\Cqrs\Types\ValueObject\OnSuccessCallback;
@@ -107,13 +108,23 @@ class CommandSender implements CommandSenderInterface
             if ($handler->supports($command)) {
                 $handler->handle(
                     $command,
-                    new OnSuccessCallback(function ($response) use ($handler): void {
+                    new OnSuccessCallback(function ($response) use ($currentProfileKey, $handler): void {
                         $this->setIsHandled($handler);
                         $this->lastSuccess = $response;
+
+                        $this->debug($currentProfileKey, fn () => [
+                            'handled by' => Utils::getType($handler),
+                            'response' => $response,
+                        ]);
                     }),
-                    new OnErrorCallback(function (\Throwable $error) use ($handler): void {
+                    new OnErrorCallback(function (\Throwable $error) use ($currentProfileKey, $handler): void {
                         $this->setIsHandled($handler);
                         $this->lastError = $error;
+
+                        $this->debug($currentProfileKey, fn () => [
+                            'handled by' => Utils::getType($handler),
+                            'response' => $error,
+                        ]);
                     }),
                 );
 

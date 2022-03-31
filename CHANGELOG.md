@@ -3,6 +3,9 @@
 <!-- There should always be "Unreleased" section at the beginning. -->
 
 ## Unreleased
+- Cache response before Impure Decoder decodes the response
+- Add handled response type to profiler item
+- Allow setting verbosity for a profiler
 
 ## 1.2.1 - 2022-03-09
 - Fix profiling last used decoders when there are none

@@ -150,16 +150,23 @@ class QueryFetcher implements QueryFetcherInterface
             if ($handler->supports($query)) {
                 $handler->handle(
                     $query,
-                    new OnSuccessCallback(function ($response) use ($handler): void {
+                    new OnSuccessCallback(function ($response) use ($currentProfileKey, $handler): void {
                         $this->setIsHandled($handler);
                         $this->lastSuccess = $response;
-                        //if (function_exists('dump')) {
-                        //    call_user_func('dump', ['handled by' => Utils::getType($handler), 'result' => $response]);
-                        //}
+
+                        $this->debug($currentProfileKey, fn () => [
+                            'handled by' => Utils::getType($handler),
+                            'response' => $response,
+                        ]);
                     }),
-                    new OnErrorCallback(function (\Throwable $error) use ($handler): void {
+                    new OnErrorCallback(function (\Throwable $error) use ($currentProfileKey, $handler): void {
                         $this->setIsHandled($handler);
                         $this->lastError = $error;
+
+                        $this->debug($currentProfileKey, fn () => [
+                            'handled by' => Utils::getType($handler),
+                            'response' => $error,
+                        ]);
                     }),
                 );
 
@@ -291,15 +298,11 @@ class QueryFetcher implements QueryFetcherInterface
         $currentResponse
     ) {
         if ($initiator instanceof CacheableInterface && $decoder instanceof ImpureResponseDecoderInterface) {
-            //if (function_exists('dump')) {
-            //    call_user_func('dump', [
-            //        __METHOD__ => [
-            //            'cache result as is' => $currentResponse,
-            //            'query' => Utils::getType($initiator),
-            //            'decoder' => Utils::getType($decoder),
-            //        ],
-            //    ]);
-            //}
+            $this->debug($currentProfileKey, fn () => [
+                'impure decoder' => Utils::getType($decoder),
+                'cache result before decoding' => $currentResponse,
+            ]);
+
             if ($this->shouldCacheResponse($initiator)) {
                 $this->cacheSuccess($initiator, $currentProfileKey, $currentResponse);
             }
@@ -327,16 +330,9 @@ class QueryFetcher implements QueryFetcherInterface
             && $this->isCacheEnabled()
             && ($lifetime = $query->getCacheTime()->getSeconds()) > 0
         ) {
-            //if (function_exists('dump')) {
-            //    call_user_func('dump', [
-            //        __METHOD__ => [
-            //            __METHOD__ => [
-            //                'query' => Utils::getType($query),
-            //                'response' => $response,
-            //            ],
-            //        ],
-            //    ]);
-            //}
+            $this->debug($currentProfilerKey, fn () => [
+                'cache response' => $response,
+            ]);
 
             $cacheItem = $this->cache->getItem($query->getCacheKey()->getHashedKey());
             $cacheItem->expiresAfter($lifetime);
@@ -367,7 +363,11 @@ class QueryFetcher implements QueryFetcherInterface
                 $profilerItem->setDuration((int) $elapsed->getDuration());
             }
 
-            $profilerItem->setHandledBy(get_class($currentHandler));
+            $profilerItem->setHandledBy(sprintf(
+                '%s<%s>',
+                get_class($currentHandler),
+                Utils::getType($this->lastError ?? $this->lastSuccess)
+            ));
             $profilerItem->setDecodedBy($this->lastUsedDecoders[$currentProfilerKey->toString()] ?? []);
 
             if ($query instanceof CacheableInterface) {

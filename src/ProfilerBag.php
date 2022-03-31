@@ -65,4 +65,15 @@ class ProfilerBag implements \IteratorAggregate, \Countable
     {
         return $this->verbosity;
     }
+
+    public function isVerbose(): bool
+    {
+        return $this->verbosity === self::VERBOSITY_VERBOSE
+            || $this->verbosity === self::VERBOSITY_DEBUG;
+    }
+
+    public function isDebug(): bool
+    {
+        return $this->verbosity === self::VERBOSITY_DEBUG;
+    }
 }

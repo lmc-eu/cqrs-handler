@@ -2,6 +2,7 @@
 
 namespace Lmc\Cqrs\Handler;
 
+use Hoa\Math\Util;
 use Lmc\Cqrs\Handler\Core\CommonCQRSTrait;
 use Lmc\Cqrs\Handler\Handler\GetCachedHandler;
 use Lmc\Cqrs\Types\Decoder\ImpureResponseDecoderInterface;
@@ -151,22 +152,12 @@ class QueryFetcher implements QueryFetcherInterface
                 $handler->handle(
                     $query,
                     new OnSuccessCallback(function ($response) use ($currentProfileKey, $handler): void {
-                        $this->setIsHandled($handler);
+                        $this->setIsHandled($handler, $currentProfileKey, $response);
                         $this->lastSuccess = $response;
-
-                        $this->debug($currentProfileKey, fn () => [
-                            'handled by' => Utils::getType($handler),
-                            'response' => $response,
-                        ]);
                     }),
                     new OnErrorCallback(function (\Throwable $error) use ($currentProfileKey, $handler): void {
-                        $this->setIsHandled($handler);
+                        $this->setIsHandled($handler, $currentProfileKey, $error);
                         $this->lastError = $error;
-
-                        $this->debug($currentProfileKey, fn () => [
-                            'handled by' => Utils::getType($handler),
-                            'response' => $error,
-                        ]);
                     }),
                 );
 
@@ -366,7 +357,7 @@ class QueryFetcher implements QueryFetcherInterface
             $profilerItem->setHandledBy(sprintf(
                 '%s<%s>',
                 get_class($currentHandler),
-                Utils::getType($this->lastError ?? $this->lastSuccess)
+                $this->handledResponseType
             ));
             $profilerItem->setDecodedBy($this->lastUsedDecoders[$currentProfilerKey->toString()] ?? []);
 

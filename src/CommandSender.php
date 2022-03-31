@@ -109,22 +109,12 @@ class CommandSender implements CommandSenderInterface
                 $handler->handle(
                     $command,
                     new OnSuccessCallback(function ($response) use ($currentProfileKey, $handler): void {
-                        $this->setIsHandled($handler);
+                        $this->setIsHandled($handler, $currentProfileKey, $response);
                         $this->lastSuccess = $response;
-
-                        $this->debug($currentProfileKey, fn () => [
-                            'handled by' => Utils::getType($handler),
-                            'response' => $response,
-                        ]);
                     }),
                     new OnErrorCallback(function (\Throwable $error) use ($currentProfileKey, $handler): void {
-                        $this->setIsHandled($handler);
+                        $this->setIsHandled($handler, $currentProfileKey, $error);
                         $this->lastError = $error;
-
-                        $this->debug($currentProfileKey, fn () => [
-                            'handled by' => Utils::getType($handler),
-                            'response' => $error,
-                        ]);
                     }),
                 );
 
@@ -234,7 +224,11 @@ class CommandSender implements CommandSenderInterface
                 $profilerItem->setDuration((int) $elapsed->getDuration());
             }
 
-            $profilerItem->setHandledBy(get_class($currentHandler));
+            $profilerItem->setHandledBy(sprintf(
+                '%s<%s>',
+                get_class($currentHandler),
+                $this->handledResponseType
+            ));
             $profilerItem->setDecodedBy($this->lastUsedDecoders[$currentProfilerKey->toString()] ?? []);
 
             if ($this->lastSuccess) {

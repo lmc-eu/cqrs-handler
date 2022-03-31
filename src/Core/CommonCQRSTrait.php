@@ -27,6 +27,7 @@ trait CommonCQRSTrait
     private bool $isHandled;
     /** @phpstan-var Handler|null */
     private $usedHandler;
+    private ?string $handledResponseType = null;
 
     private ?\Throwable $lastError;
     /** @var array<string, string[]> */
@@ -78,11 +79,33 @@ trait CommonCQRSTrait
         return $this->decoders;
     }
 
-    /** @phpstan-param Handler|null $handler */
-    private function setIsHandled($handler): void
+    /**
+     * @phpstan-param Handler|null $handler
+     * @param mixed $response
+     */
+    private function setIsHandled($handler, ?UuidInterface $currentProfileKey = null, $response = null): void
     {
         $this->isHandled = $handler !== null;
-        $this->usedHandler = $handler;
+
+        if ($handler !== null) {
+            $this->usedHandler = $handler;
+            $this->handledResponseType = Utils::getType($response);
+
+            $this->verboseOrDebug(
+                $currentProfileKey,
+                fn () => [
+                    'handled by' => Utils::getType($handler),
+                    'response' => $this->handledResponseType,
+                ],
+                fn () => [
+                    'handled by' => Utils::getType($handler),
+                    'response' => [
+                        'type' => $this->handledResponseType,
+                        'data' => $response,
+                    ],
+                ]
+            );
+        }
     }
 
     /** @phpstan-param Initiator $initiator */
@@ -192,13 +215,17 @@ trait CommonCQRSTrait
             // todo - it could be better to add a specific array for verbose and debug to the profilerItem, but to gather the info and test it, this should be enough
 
             if ($this->profilerBag->isDebug()) {
-                $debug = $profilerItem->getAdditionalData()['debug'] ?? [];
-                $debug[] = $debugData();
-                $profilerItem->setAdditionalData('debug', $debug);
+                if (!empty($data = $debugData())) {
+                    $debug = $profilerItem->getAdditionalData()['debug'] ?? [];
+                    $debug[] = $data;
+                    $profilerItem->setAdditionalData('debug', $debug);
+                }
             } elseif ($this->profilerBag->isVerbose()) {
-                $verbose = $profilerItem->getAdditionalData()['verbose'] ?? [];
-                $verbose[] = $verboseData();
-                $profilerItem->setAdditionalData('verbose', $verbose);
+                if (!empty($data = $verboseData())) {
+                    $verbose = $profilerItem->getAdditionalData()['verbose'] ?? [];
+                    $verbose[] = $data;
+                    $profilerItem->setAdditionalData('verbose', $verbose);
+                }
             }
         }
     }

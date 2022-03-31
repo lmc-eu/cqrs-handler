@@ -3,8 +3,8 @@
 namespace Lmc\Cqrs\Handler;
 
 use Lmc\Cqrs\Handler\Core\CommonCQRSTrait;
-use Lmc\Cqrs\Handler\Core\DontCacheDecodedValueInterface;
 use Lmc\Cqrs\Handler\Handler\GetCachedHandler;
+use Lmc\Cqrs\Types\Decoder\ImpureResponseDecoderInterface;
 use Lmc\Cqrs\Types\Decoder\ResponseDecoderInterface;
 use Lmc\Cqrs\Types\Exception\NoQueryHandlerUsedException;
 use Lmc\Cqrs\Types\Feature\CacheableInterface;
@@ -290,7 +290,7 @@ class QueryFetcher implements QueryFetcherInterface
         ResponseDecoderInterface $decoder,
         $currentResponse
     ) {
-        if ($initiator instanceof CacheableInterface && $decoder instanceof DontCacheDecodedValueInterface) {
+        if ($initiator instanceof CacheableInterface && $decoder instanceof ImpureResponseDecoderInterface) {
             //if (function_exists('dump')) {
             //    call_user_func('dump', [
             //        __METHOD__ => [

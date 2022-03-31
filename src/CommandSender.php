@@ -3,31 +3,34 @@
 namespace Lmc\Cqrs\Handler;
 
 use Lmc\Cqrs\Handler\Core\CommonCQRSTrait;
+use Lmc\Cqrs\Handler\Core\SendContext;
 use Lmc\Cqrs\Types\CommandInterface;
 use Lmc\Cqrs\Types\CommandSenderInterface;
 use Lmc\Cqrs\Types\Decoder\ResponseDecoderInterface;
 use Lmc\Cqrs\Types\Exception\NoSendCommandHandlerUsedException;
 use Lmc\Cqrs\Types\Feature\ProfileableInterface;
 use Lmc\Cqrs\Types\SendCommandHandlerInterface;
+use Lmc\Cqrs\Types\Utils;
 use Lmc\Cqrs\Types\ValueObject\OnErrorCallback;
 use Lmc\Cqrs\Types\ValueObject\OnErrorInterface;
 use Lmc\Cqrs\Types\ValueObject\OnSuccessCallback;
 use Lmc\Cqrs\Types\ValueObject\OnSuccessInterface;
 use Lmc\Cqrs\Types\ValueObject\PrioritizedItem;
 use Lmc\Cqrs\Types\ValueObject\ProfilerItem;
-use Ramsey\Uuid\Uuid;
-use Ramsey\Uuid\UuidInterface;
-use Symfony\Component\Stopwatch\Stopwatch;
 
 /**
  * @phpstan-template Request
  * @phpstan-template Response
  * @phpstan-template DecodedResponse
+ *
+ * @phpstan-type Handler SendCommandHandlerInterface<Request, Response>
+ * @phpstan-type Context SendContext<Request, Handler, DecodedResponse>
+ *
  * @phpstan-implements CommandSenderInterface<Request, DecodedResponse>
  */
 class CommandSender implements CommandSenderInterface
 {
-    /** @phpstan-use CommonCQRSTrait<CommandInterface<Request>, SendCommandHandlerInterface<Request, Response>> */
+    /** @phpstan-use CommonCQRSTrait<Context, Handler> */
     use CommonCQRSTrait;
 
     /**
@@ -35,12 +38,6 @@ class CommandSender implements CommandSenderInterface
      * @var PrioritizedItem[]
      */
     private array $handlers = [];
-
-    /**
-     * @phpstan-var ?DecodedResponse
-     * @var ?mixed
-     */
-    private $lastSuccess;
 
     /**
      * Custom Handler(s) priority defaults to 50 (medium)
@@ -88,9 +85,11 @@ class CommandSender implements CommandSenderInterface
 
     public function send(CommandInterface $command, OnSuccessInterface $onSuccess, OnErrorInterface $onError): void
     {
-        $this->setIsHandled(null);
-        $this->lastSuccess = null;
-        $this->lastError = null;
+        $context = new SendContext($command);
+
+        // $this->setIsHandled(null);
+        // $this->lastSuccess = null;
+        // $this->lastError = null;
 
         foreach ($this->iterateHandlers() as $handler) {
             if ($handler->supports($command)) {
@@ -98,44 +97,54 @@ class CommandSender implements CommandSenderInterface
             }
         }
 
-        $currentProfileKey = null;
+        // $currentProfileKey = null;
         if ($command instanceof ProfileableInterface) {
-            $currentProfileKey = $this->startProfileCommand($command);
+            $this->startProfileCommand($command, $context);
+            //$currentProfileKey = $this->startProfileCommand($command);
         }
 
         foreach ($this->iterateHandlers() as $handler) {
-            if ($handler->supports($command)) {
-                $handler->handle(
-                    $command,
-                    new OnSuccessCallback(function ($response) use ($currentProfileKey, $handler): void {
-                        $this->setIsHandled($handler, $currentProfileKey, $response);
-                        $this->lastSuccess = $response;
-                    }),
-                    new OnErrorCallback(function (\Throwable $error) use ($currentProfileKey, $handler): void {
-                        $this->setIsHandled($handler, $currentProfileKey, $error);
-                        $this->lastError = $error;
-                    }),
-                );
+            if (!$handler->supports($command)) {
+                continue;
+            }
 
-                if ($this->isHandled && $this->lastError === null) {
-                    $this->decodeResponse($command, $currentProfileKey);
-                }
+            $handler->handle(
+                $command,
+                new OnSuccessCallback(function ($response) use ($context, $handler): void {
+                    $this->setIsHandled($handler, $context, $response);
+                    $context->setResponse($response);
+                    // $this->lastSuccess = $response;
+                }),
+                new OnErrorCallback(function (\Throwable $error) use ($context, $handler): void {
+                    $this->setIsHandled($handler, $context, $error);
+                    $context->setError($error);
+                    //$this->lastError = $error;
+                }),
+            );
 
-                if ($this->isHandled && $command instanceof ProfileableInterface) {
-                    $this->profileCommandFinished($command, $currentProfileKey, $handler);
-                }
+            //if ($this->isHandled && $this->lastError === null) {
+            if ($context->isHandled() && $context->getError() === null) {
+                $this->decodeResponse($context);
+            }
 
-                if ($this->isHandled && $this->lastError) {
-                    $onError($this->lastError);
+            // if ($this->isHandled && $command instanceof ProfileableInterface) {
+            if ($context->isHandled() && $command instanceof ProfileableInterface) {
+                $this->profileCommandFinished($context);
+            }
 
-                    return;
-                }
+            // if ($this->isHandled && $this->lastError) {
+            if ($context->isHandled() && ($error = $context->getError())) {
+                $onError($error);
 
-                if ($this->isHandled && $this->lastSuccess) {
-                    $onSuccess($this->lastSuccess);
+                // $onError($this->lastError);
 
-                    return;
-                }
+                return;
+            }
+
+            if ($context->isHandled()) {
+                $onSuccess($context->getResponse());
+
+                return;
             }
         }
 
@@ -145,15 +154,14 @@ class CommandSender implements CommandSenderInterface
     /**
      * @phpstan-template T
      * @phpstan-template U
-     * @phpstan-param CommandInterface<Request> $initiator
+     * @phpstan-param Context $context
      * @phpstan-param ResponseDecoderInterface<T, U> $decoder
      * @phpstan-param T $currentResponse
      * @phpstan-return U
      * @param mixed $currentResponse
      */
     private function getDecodedResponse(
-        CommandInterface $initiator,
-        ?UuidInterface $currentProfileKey,
+        SendContext $context,
         ResponseDecoderInterface $decoder,
         $currentResponse
     ) {
@@ -189,10 +197,13 @@ class CommandSender implements CommandSenderInterface
         );
     }
 
-    private function startProfileCommand(ProfileableInterface $command): UuidInterface
+    /** @phpstan-param Context $context
+     */
+    private function startProfileCommand(ProfileableInterface $command, SendContext $context): void
     {
-        $key = Uuid::uuid4();
         if ($this->profilerBag) {
+            $key = $context->getKey();
+
             $this->profilerBag->add(
                 $key,
                 new ProfilerItem(
@@ -203,39 +214,34 @@ class CommandSender implements CommandSenderInterface
                 )
             );
 
-            $this->stopwatch = $this->stopwatch ?? new Stopwatch();
-            $this->stopwatch->start($key->toString());
+            $context->startStopwatch();
         }
-
-        return $key;
     }
 
-    /** @phpstan-param SendCommandHandlerInterface<Request, Response> $currentHandler */
-    private function profileCommandFinished(
-        ProfileableInterface $command,
-        ?UuidInterface $currentProfilerKey,
-        SendCommandHandlerInterface $currentHandler
-    ): void {
-        if ($this->profilerBag && $currentProfilerKey && ($profilerItem = $this->profilerBag->get($currentProfilerKey))) {
-            if ($this->stopwatch) {
-                $elapsed = $this->stopwatch->stop($currentProfilerKey->toString());
+    /**
+     * @phpstan-param Context $context
+     */
+    private function profileCommandFinished(SendContext $context): void
+    {
+        if ($this->profilerBag && ($profilerItem = $this->profilerBag->get($context->getKey()))) {
+            $context->stopStopwatch($profilerItem);
 
-                $profilerItem->setDuration((int) $elapsed->getDuration());
-            }
+            $currentHandler = $context->getUsedHandler();
 
             $profilerItem->setHandledBy(sprintf(
                 '%s<%s>',
-                get_class($currentHandler),
-                $this->handledResponseType
+                Utils::getType($currentHandler),
+                $context->getHandledResponseType()
             ));
-            $profilerItem->setDecodedBy($this->lastUsedDecoders[$currentProfilerKey->toString()] ?? []);
+            $profilerItem->setDecodedBy($context->getUsedDecoders());
+            //$profilerItem->setDecodedBy($this->lastUsedDecoders[$currentProfilerKey->toString()] ?? []);
 
-            if ($this->lastSuccess) {
-                $profilerItem->setResponse($this->lastSuccess);
+            if ($response = $context->getResponse()) {
+                $profilerItem->setResponse($response);
             }
 
-            if ($this->lastError) {
-                $profilerItem->setError($this->lastError);
+            if ($error = $context->getError()) {
+                $profilerItem->setError($error);
             }
         }
     }

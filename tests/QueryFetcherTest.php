@@ -6,6 +6,7 @@ use Lmc\Cqrs\Handler\Fixture\CacheableProfileableQueryAdapter;
 use Lmc\Cqrs\Handler\Fixture\CacheableQueryAdapter;
 use Lmc\Cqrs\Handler\Fixture\DummyQuery;
 use Lmc\Cqrs\Handler\Fixture\DummyQueryHandler;
+use Lmc\Cqrs\Handler\Fixture\ImpureTranslationDecoder;
 use Lmc\Cqrs\Handler\Fixture\ProfileableQueryAdapter;
 use Lmc\Cqrs\Handler\Handler\GetCachedHandler;
 use Lmc\Cqrs\Types\Decoder\CallbackResponseDecoder;
@@ -889,6 +890,22 @@ class QueryFetcherTest extends AbstractTestCase
      */
     public function shouldCacheResponseBeforeDecodingByImpureDecoder(): void
     {
-        $this->markTestIncomplete('todo');
+        $key = new CacheKey('some-key');
+
+        $dummyQuery = new DummyQuery('fresh-data');
+        $expectedValue = 'translated[cs]: fresh-data';
+
+        $this->queryFetcher->addHandler(new DummyQueryHandler(), PrioritizedItem::PRIORITY_MEDIUM);
+        $this->queryFetcher->addDecoder(new ImpureTranslationDecoder('cs'), PrioritizedItem::PRIORITY_MEDIUM);
+
+        $this->queryFetcher->fetch(
+            new CacheableQueryAdapter($dummyQuery, $key, CacheTime::oneMinute()),
+            new OnSuccessCallback(fn ($data) => $this->assertSame($expectedValue, $data)),
+            new OnErrorCallback(fn (\Throwable $error) => $this->fail($error->getMessage()))
+        );
+
+        $item = $this->cache->getItem($key->getHashedKey());
+        $this->assertTrue($item->isHit());
+        $this->assertSame('fresh-data', $item->get());
     }
 }

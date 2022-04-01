@@ -4,6 +4,7 @@ namespace Lmc\Cqrs\Handler\Core;
 
 use Lmc\Cqrs\Handler\ProfilerBag;
 use Lmc\Cqrs\Types\Decoder\ResponseDecoderInterface;
+use Lmc\Cqrs\Types\Utils;
 use Lmc\Cqrs\Types\ValueObject\DecodedValueInterface;
 use Lmc\Cqrs\Types\ValueObject\PrioritizedItem;
 use Ramsey\Uuid\UuidInterface;
@@ -75,13 +76,10 @@ trait CommonCQRSTrait
     private function setIsHandled($handler, AbstractContext $context, $response = null): void
     {
         $context->setIsHandled($handler !== null);
-        // $this->isHandled = $handler !== null;
 
         if ($handler !== null) {
             $context->setUsedHandler($handler);
             $context->setHandledResponseType(Utils::getType($response));
-            // $this->usedHandler = $handler;
-            // $this->handledResponseType = Utils::getType($response);
 
             $this->verboseOrDebug(
                 $context->getKey(),
@@ -104,7 +102,6 @@ trait CommonCQRSTrait
     {
         $initiator = $context->getInitiator();
         $currentResponse = $context->getResponse();
-        // $profilerKey = $context->getKey()->toString();
 
         $this->verbose($context->getKey(), fn () => [
             'start decoding response' => Utils::getType($currentResponse),
@@ -158,23 +155,8 @@ trait CommonCQRSTrait
 
                 $continueDecoding = false;
                 $decodedResponse = $decodedResponse->getValue();
-
-                // $this->lastUsedDecoders[$profilerKey][] = sprintf(
-                //     '%s<%s, DecodedValue<%s>>',
-                //     get_class($decoder),
-                //     Utils::getType($currentResponse),
-                //     Utils::getType($decodedResponse)
-                // );
             }
 
-            // if ($profilerKey) {
-            //     $this->lastUsedDecoders[$profilerKey][] = sprintf(
-            //         '%s<%s, %s>',
-            //         get_class($decoder),
-            //         Utils::getType($currentResponse),
-            //         Utils::getType($decodedResponse)
-            //     );
-            // }
             $currentResponse = $decodedResponse;
 
             if (!$continueDecoding) {
@@ -183,29 +165,26 @@ trait CommonCQRSTrait
         }
 
         $context->setResponse($currentResponse);
-        // $this->lastSuccess = $currentResponse;
     }
 
     private function verboseOrDebug(UuidInterface $profilerKey, callable $createVerboseData, callable $createDebugData): void
     {
         if ($this->profilerBag && ($profilerItem = $this->profilerBag->get($profilerKey))) {
-            // todo - it could be better to add a specific array for verbose and debug to the profilerItem, but to gather the info and test it, this should be enough
-
             if ($this->profilerBag->isDebug()) {
                 if (!empty($debugData = $createDebugData())) {
-                    $debug = $profilerItem->getAdditionalData()['debug'] ?? [];
+                    $debug = $profilerItem->getAdditionalData()['CQRS.debug'] ?? [];
                     $debug[] = $debugData;
-                    $profilerItem->setAdditionalData('debug', $debug);
+                    $profilerItem->setAdditionalData('CQRS.debug', $debug);
                 } elseif (!empty($verboseData = $createVerboseData())) {
-                    $debug = $profilerItem->getAdditionalData()['debug'] ?? [];
+                    $debug = $profilerItem->getAdditionalData()['CQRS.debug'] ?? [];
                     $debug[] = $verboseData;
-                    $profilerItem->setAdditionalData('debug', $debug);
+                    $profilerItem->setAdditionalData('CQRS.debug', $debug);
                 }
             } elseif ($this->profilerBag->isVerbose()) {
                 if (!empty($verboseData = $createVerboseData())) {
-                    $verbose = $profilerItem->getAdditionalData()['verbose'] ?? [];
+                    $verbose = $profilerItem->getAdditionalData()['CQRS.verbose'] ?? [];
                     $verbose[] = $verboseData;
-                    $profilerItem->setAdditionalData('verbose', $verbose);
+                    $profilerItem->setAdditionalData('CQRS.verbose', $verbose);
                 }
             }
         }

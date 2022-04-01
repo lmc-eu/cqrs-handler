@@ -5,6 +5,7 @@ namespace Lmc\Cqrs\Handler\Core;
 use Lmc\Cqrs\Types\CommandInterface;
 use Lmc\Cqrs\Types\Decoder\ResponseDecoderInterface;
 use Lmc\Cqrs\Types\QueryInterface;
+use Lmc\Cqrs\Types\Utils;
 use Lmc\Cqrs\Types\ValueObject\ProfilerItem;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;

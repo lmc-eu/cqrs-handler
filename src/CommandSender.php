@@ -87,20 +87,14 @@ class CommandSender implements CommandSenderInterface
     {
         $context = new SendContext($command);
 
-        // $this->setIsHandled(null);
-        // $this->lastSuccess = null;
-        // $this->lastError = null;
-
         foreach ($this->iterateHandlers() as $handler) {
             if ($handler->supports($command)) {
                 $handler->prepare($command);
             }
         }
 
-        // $currentProfileKey = null;
         if ($command instanceof ProfileableInterface) {
             $this->startProfileCommand($command, $context);
-            //$currentProfileKey = $this->startProfileCommand($command);
         }
 
         foreach ($this->iterateHandlers() as $handler) {
@@ -113,30 +107,23 @@ class CommandSender implements CommandSenderInterface
                 new OnSuccessCallback(function ($response) use ($context, $handler): void {
                     $this->setIsHandled($handler, $context, $response);
                     $context->setResponse($response);
-                    // $this->lastSuccess = $response;
                 }),
                 new OnErrorCallback(function (\Throwable $error) use ($context, $handler): void {
                     $this->setIsHandled($handler, $context, $error);
                     $context->setError($error);
-                    //$this->lastError = $error;
                 }),
             );
 
-            //if ($this->isHandled && $this->lastError === null) {
             if ($context->isHandled() && $context->getError() === null) {
                 $this->decodeResponse($context);
             }
 
-            // if ($this->isHandled && $command instanceof ProfileableInterface) {
             if ($context->isHandled() && $command instanceof ProfileableInterface) {
                 $this->profileCommandFinished($context);
             }
 
-            // if ($this->isHandled && $this->lastError) {
             if ($context->isHandled() && ($error = $context->getError())) {
                 $onError($error);
-
-                // $onError($this->lastError);
 
                 return;
             }
@@ -234,7 +221,6 @@ class CommandSender implements CommandSenderInterface
                 $context->getHandledResponseType()
             ));
             $profilerItem->setDecodedBy($context->getUsedDecoders());
-            //$profilerItem->setDecodedBy($this->lastUsedDecoders[$currentProfilerKey->toString()] ?? []);
 
             if ($response = $context->getResponse()) {
                 $profilerItem->setResponse($response);

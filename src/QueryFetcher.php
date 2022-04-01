@@ -43,18 +43,8 @@ class QueryFetcher implements QueryFetcherInterface
      */
     private array $handlers = [];
 
-    /**
-     * @deprecated use context
-     * @phpstan-var ?DecodedResponse
-     * @var ?mixed
-     */
-    private $lastSuccess;
-
     private bool $isCacheEnabled;
     private ?CacheItemPoolInterface $cache;
-
-    /** @deprecated use context */
-    private array $isAlreadyCached = [];
 
     /**
      * Custom Handler(s) priority defaults to 50 (medium)
@@ -134,10 +124,6 @@ class QueryFetcher implements QueryFetcherInterface
     ): void {
         $context = new FetchContext($query);
 
-        // $this->setIsHandled(null);
-        // $this->lastSuccess = null;
-        // $this->lastError = null;
-
         foreach ($this->iterateHandlers($filter) as $handler) {
             if ($handler->supports($query)) {
                 $handler->prepare($query);
@@ -146,7 +132,6 @@ class QueryFetcher implements QueryFetcherInterface
 
         if ($query instanceof ProfileableInterface) {
             $this->startProfileQuery($query, $context);
-            // $currentProfileKey = $this->startProfileQuery($query);
         }
 
         foreach ($this->iterateHandlers($filter) as $handler) {
@@ -170,24 +155,20 @@ class QueryFetcher implements QueryFetcherInterface
                 }),
             );
 
-            //if ($this->isHandled && $this->lastError === null) {
             if ($context->isHandled() && $context->getError() === null) {
                 $this->decodeResponse($context);
             }
 
-            //if ($this->isHandled && $query instanceof ProfileableInterface) {
             if ($context->isHandled() && $query instanceof ProfileableInterface) {
                 $this->profileQueryFinished($context);
             }
 
-            //if ($this->isHandled && $this->lastError) {
             if ($context->isHandled() && ($error = $context->getError())) {
                 $onError($error);
 
                 return;
             }
 
-            //if ($this->isHandled) {
             if ($context->isHandled()) {
                 $response = $context->getResponse();
                 if ($query instanceof CacheableInterface && $this->shouldCacheResponse($context)) {
@@ -309,7 +290,6 @@ class QueryFetcher implements QueryFetcherInterface
             }
 
             $context->setIsAlreadyCached();
-            // $this->isAlreadyCached[$initiator->getCacheKey()->getHashedKey()] = true;
         }
 
         return $decoder->decode($currentResponse);
@@ -319,10 +299,6 @@ class QueryFetcher implements QueryFetcherInterface
     private function shouldCacheResponse(FetchContext $context): bool
     {
         $usedHandler = $context->getUsedHandler();
-
-        //return !($this->usedHandler instanceof GetCachedHandler)
-        //    && array_key_exists($hashedKey, $this->isAlreadyCached)
-        //    && !$this->isAlreadyCached[$hashedKey];
 
         return !($usedHandler instanceof GetCachedHandler)
             && !$context->isAlreadyCached();
@@ -373,7 +349,6 @@ class QueryFetcher implements QueryFetcherInterface
                 $context->getHandledResponseType()
             ));
             $profilerItem->setDecodedBy($context->getUsedDecoders());
-            //$profilerItem->setDecodedBy($this->lastUsedDecoders[$currentProfilerKey->toString()] ?? []);
 
             if ($query instanceof CacheableInterface) {
                 $profilerItem->setCacheKey($query->getCacheKey());

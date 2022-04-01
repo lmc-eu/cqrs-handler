@@ -192,16 +192,13 @@ trait CommonCQRSTrait
             // todo - it could be better to add a specific array for verbose and debug to the profilerItem, but to gather the info and test it, this should be enough
 
             if ($this->profilerBag->isDebug()) {
-                if (!empty($debugData = $createDebugData()) || !empty($verboseData = $createVerboseData())) {
+                if (!empty($debugData = $createDebugData())) {
                     $debug = $profilerItem->getAdditionalData()['debug'] ?? [];
-
-                    if (!empty($debugData)) {
-                        $debug[] = $debugData;
-                    }
-                    if (!empty($verboseData)) {
-                        $debug[] = $verboseData;
-                    }
-
+                    $debug[] = $debugData;
+                    $profilerItem->setAdditionalData('debug', $debug);
+                } elseif (!empty($verboseData = $createVerboseData())) {
+                    $debug = $profilerItem->getAdditionalData()['debug'] ?? [];
+                    $debug[] = $verboseData;
                     $profilerItem->setAdditionalData('debug', $debug);
                 }
             } elseif ($this->profilerBag->isVerbose()) {

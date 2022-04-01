@@ -301,7 +301,7 @@ class QueryFetcher implements QueryFetcherInterface
         if ($query instanceof CacheableInterface && $decoder instanceof ImpureResponseDecoderInterface) {
             $this->debug($context->getKey(), fn () => [
                 'impure decoder' => Utils::getType($decoder),
-                'cache result before decoding' => $currentResponse,
+                'try cache response before decoding' => $currentResponse,
             ]);
 
             if ($this->shouldCacheResponse($context)) {

@@ -325,7 +325,7 @@ class QueryFetcher implements QueryFetcherInterface
         //    && !$this->isAlreadyCached[$hashedKey];
 
         return !($usedHandler instanceof GetCachedHandler)
-            && $context->isAlreadyCached();
+            && !$context->isAlreadyCached();
     }
 
     /**

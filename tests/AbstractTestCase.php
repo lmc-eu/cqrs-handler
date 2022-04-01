@@ -15,11 +15,18 @@ abstract class AbstractTestCase extends TestCase
     }
 
     /** @param ProfilerItem[] $profilerBag */
-    protected function assertLastHandledBy(string $expectedHandler, array $profilerBag): void
+    protected function assertLastHandledBy(string $expectedHandlerClass, string $expectedResponseType, array $profilerBag): void
     {
         /** @var ProfilerItem $lastProfilerItem */
         $lastProfilerItem = end($profilerBag);
 
-        $this->assertSame($expectedHandler, $lastProfilerItem->getHandledBy());
+        $this->assertHandledBy($expectedHandlerClass, $expectedResponseType, $lastProfilerItem->getHandledBy());
+    }
+
+    protected function assertHandledBy(string $expectedHandlerClass, string $expectedResponseType, string $actual): void
+    {
+        $expected = sprintf('%s<%s>', $expectedHandlerClass, $expectedResponseType);
+
+        $this->assertSame($expected, $actual);
     }
 }

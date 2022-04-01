@@ -339,7 +339,7 @@ class QueryFetcherTest extends AbstractTestCase
             new OnSuccessCallback(fn ($data) => $this->assertSame($cachedValue, $data)),
             new OnErrorCallback(fn (\Throwable $error) => $this->fail($error->getMessage()))
         );
-        $this->assertLastHandledBy(GetCachedHandler::class, $this->profilerBag->getBag());
+        $this->assertLastHandledBy(GetCachedHandler::class, 'string', $this->profilerBag->getBag());
 
         // invalidate cache
         $this->assertTrue($this->queryFetcher->invalidateQueryCache($query));
@@ -350,7 +350,7 @@ class QueryFetcherTest extends AbstractTestCase
             new OnSuccessCallback(fn ($data) => $this->assertSame('fresh-data', $data)),
             new OnErrorCallback(fn (\Throwable $error) => $this->fail($error->getMessage()))
         );
-        $this->assertLastHandledBy(DummyQueryHandler::class, $this->profilerBag->getBag());
+        $this->assertLastHandledBy(DummyQueryHandler::class, 'string', $this->profilerBag->getBag());
 
         // fetch from cache
         $this->queryFetcher->fetch(
@@ -358,7 +358,7 @@ class QueryFetcherTest extends AbstractTestCase
             new OnSuccessCallback(fn ($data) => $this->assertSame('fresh-data', $data)),
             new OnErrorCallback(fn (\Throwable $error) => $this->fail($error->getMessage()))
         );
-        $this->assertLastHandledBy(GetCachedHandler::class, $this->profilerBag->getBag());
+        $this->assertLastHandledBy(GetCachedHandler::class, 'string', $this->profilerBag->getBag());
 
         $this->assertCount(3, $this->profilerBag);
     }
@@ -389,7 +389,7 @@ class QueryFetcherTest extends AbstractTestCase
             new OnSuccessCallback(fn ($data) => $this->assertSame($cachedValue, $data)),
             new OnErrorCallback(fn (\Throwable $error) => $this->fail($error->getMessage()))
         );
-        $this->assertLastHandledBy(GetCachedHandler::class, $this->profilerBag->getBag());
+        $this->assertLastHandledBy(GetCachedHandler::class, 'string', $this->profilerBag->getBag());
 
         // invalidate cache
         $this->assertTrue($this->queryFetcher->invalidateCacheItem($key->getHashedKey()));
@@ -400,7 +400,7 @@ class QueryFetcherTest extends AbstractTestCase
             new OnSuccessCallback(fn ($data) => $this->assertSame('fresh-data', $data)),
             new OnErrorCallback(fn (\Throwable $error) => $this->fail($error->getMessage()))
         );
-        $this->assertLastHandledBy(DummyQueryHandler::class, $this->profilerBag->getBag());
+        $this->assertLastHandledBy(DummyQueryHandler::class, 'string', $this->profilerBag->getBag());
 
         // fetch from cache
         $this->queryFetcher->fetch(
@@ -408,7 +408,7 @@ class QueryFetcherTest extends AbstractTestCase
             new OnSuccessCallback(fn ($data) => $this->assertSame('fresh-data', $data)),
             new OnErrorCallback(fn (\Throwable $error) => $this->fail($error->getMessage()))
         );
-        $this->assertLastHandledBy(GetCachedHandler::class, $this->profilerBag->getBag());
+        $this->assertLastHandledBy(GetCachedHandler::class, 'string', $this->profilerBag->getBag());
 
         $this->assertCount(3, $this->profilerBag);
     }
@@ -492,7 +492,7 @@ class QueryFetcherTest extends AbstractTestCase
             $this->assertTrue($item->isStoredInCache());
             $this->assertSame('fresh-data', $item->getResponse());
             $this->assertNull($item->getError());
-            $this->assertSame(DummyQueryHandler::class, $item->getHandledBy());
+            $this->assertHandledBy(DummyQueryHandler::class, 'string', $item->getHandledBy());
             $this->assertSame([], $item->getDecodedBy());
         }
     }
@@ -536,7 +536,7 @@ class QueryFetcherTest extends AbstractTestCase
             $this->assertFalse($item->isStoredInCache());
             $this->assertSame($cachedValue, $item->getResponse());
             $this->assertNull($item->getError());
-            $this->assertSame(GetCachedHandler::class, $item->getHandledBy());
+            $this->assertHandledBy(GetCachedHandler::class, 'string', $item->getHandledBy());
             $this->assertSame([], $item->getDecodedBy());
         }
     }
@@ -665,7 +665,7 @@ class QueryFetcherTest extends AbstractTestCase
             $this->assertFalse($item->isStoredInCache());
             $this->assertSame('decoded:cached-value', $item->getResponse());
             $this->assertNull($item->getError());
-            $this->assertSame(GetCachedHandler::class, $item->getHandledBy());
+            $this->assertHandledBy(GetCachedHandler::class, 'string', $item->getHandledBy());
             $this->assertSame(['Lmc\Cqrs\Types\Decoder\CallbackResponseDecoder<string, string>'], $item->getDecodedBy());
         }
     }
@@ -781,7 +781,7 @@ class QueryFetcherTest extends AbstractTestCase
             $this->assertTrue($item->isStoredInCache());
             $this->assertSame($expectedResponse, $item->getResponse());
             $this->assertNull($item->getError());
-            $this->assertSame(DummyQueryHandler::class, $item->getHandledBy());
+            $this->assertHandledBy(DummyQueryHandler::class, 'string', $item->getHandledBy());
             $this->assertSame(
                 [
                     'Lmc\Cqrs\Types\Decoder\CallbackResponseDecoder<string, string>',
@@ -844,7 +844,7 @@ class QueryFetcherTest extends AbstractTestCase
             $this->assertTrue($item->isStoredInCache());
             $this->assertSame($expectedResponse, $item->getResponse());
             $this->assertNull($item->getError());
-            $this->assertSame(DummyQueryHandler::class, $item->getHandledBy());
+            $this->assertHandledBy(DummyQueryHandler::class, 'string', $item->getHandledBy());
             $this->assertSame(
                 ['Lmc\Cqrs\Types\Decoder\CallbackResponseDecoder<string, DecodedValue<string>>'],
                 $item->getDecodedBy()
@@ -882,5 +882,13 @@ class QueryFetcherTest extends AbstractTestCase
         foreach ($this->profilerBag->getIterator() as $profilerItem) {
             $this->assertCount(1, $profilerItem->getDecodedBy());
         }
+    }
+
+    /**
+     * @test
+     */
+    public function shouldCacheResponseBeforeDecodingByImpureDecoder(): void
+    {
+        $this->markTestIncomplete('todo');
     }
 }

@@ -157,6 +157,7 @@ trait CommonCQRSTrait
                 ]
             );
 
+            $context->addUsedDecoder($decoder, $currentResponse, $decodedResponse);
             $continueDecoding = true;
 
             if ($decodedResponse instanceof DecodedValueInterface) {
@@ -175,7 +176,6 @@ trait CommonCQRSTrait
                 // );
             }
 
-            $context->addUsedDecoder($decoder, $currentResponse, $decodedResponse);
             // if ($profilerKey) {
             //     $this->lastUsedDecoders[$profilerKey][] = sprintf(
             //         '%s<%s, %s>',

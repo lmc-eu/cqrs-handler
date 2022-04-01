@@ -890,18 +890,37 @@ class QueryFetcherTest extends AbstractTestCase
      */
     public function shouldCacheResponseBeforeDecodingByImpureDecoder(): void
     {
+        $onError = new OnErrorCallback(fn (\Throwable $error) => $this->fail($error->getMessage()));
+        $expectsValueOnSuccess = fn (string $expectedValue) => new OnSuccessCallback(
+            fn ($data) => $this->assertSame($expectedValue, $data)
+        );
+
         $key = new CacheKey('some-key');
 
         $dummyQuery = new DummyQuery('fresh-data');
-        $expectedValue = 'translated[cs]: fresh-data';
+        $query = new CacheableQueryAdapter($dummyQuery, $key, CacheTime::oneMinute());
+
+        $translationDecoder = new ImpureTranslationDecoder('cs');
 
         $this->queryFetcher->addHandler(new DummyQueryHandler(), PrioritizedItem::PRIORITY_MEDIUM);
-        $this->queryFetcher->addDecoder(new ImpureTranslationDecoder('cs'), PrioritizedItem::PRIORITY_MEDIUM);
+        $this->queryFetcher->addDecoder($translationDecoder, PrioritizedItem::PRIORITY_MEDIUM);
 
         $this->queryFetcher->fetch(
-            new CacheableQueryAdapter($dummyQuery, $key, CacheTime::oneMinute()),
-            new OnSuccessCallback(fn ($data) => $this->assertSame($expectedValue, $data)),
-            new OnErrorCallback(fn (\Throwable $error) => $this->fail($error->getMessage()))
+            $query,
+            $expectsValueOnSuccess('translated[cs]: fresh-data'),
+            $onError
+        );
+
+        $item = $this->cache->getItem($key->getHashedKey());
+        $this->assertTrue($item->isHit());
+        $this->assertSame('fresh-data', $item->get());
+
+        $translationDecoder->changeLanguage('en');
+
+        $this->queryFetcher->fetch(
+            $query,
+            $expectsValueOnSuccess('translated[en]: fresh-data'),
+            $onError
         );
 
         $item = $this->cache->getItem($key->getHashedKey());

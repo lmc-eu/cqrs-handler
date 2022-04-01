@@ -14,6 +14,11 @@ class ImpureTranslationDecoder implements ImpureResponseDecoderInterface
         $this->language = $language;
     }
 
+    public function changeLanguage(string $language): void
+    {
+        $this->language = $language;
+    }
+
     public function supports($response, $initiator): bool
     {
         return is_string($response);

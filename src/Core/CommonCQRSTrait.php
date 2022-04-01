@@ -91,10 +91,7 @@ trait CommonCQRSTrait
                 ],
                 fn () => [
                     'handled by' => Utils::getType($handler),
-                    'response' => [
-                        'type' => $context->getHandledResponseType(),
-                        'data' => $response,
-                    ],
+                    'response' => $response,
                 ]
             );
         }
@@ -146,14 +143,8 @@ trait CommonCQRSTrait
                 fn () => [
                     'loop' => $i,
                     'decoder' => Utils::getType($decoder),
-                    'response' => [
-                        'type' => Utils::getType($currentResponse),
-                        'data' => $currentResponse,
-                    ],
-                    'decoded response' => [
-                        'type' => Utils::getType($decodedResponse),
-                        'data' => $decodedResponse,
-                    ],
+                    'response' => $currentResponse,
+                    'decoded response' => $decodedResponse,
                 ]
             );
 
@@ -195,36 +186,43 @@ trait CommonCQRSTrait
         // $this->lastSuccess = $currentResponse;
     }
 
-    private function verboseOrDebug(UuidInterface $profilerKey, callable $verboseData, callable $debugData): void
+    private function verboseOrDebug(UuidInterface $profilerKey, callable $createVerboseData, callable $createDebugData): void
     {
         if ($this->profilerBag && ($profilerItem = $this->profilerBag->get($profilerKey))) {
             // todo - it could be better to add a specific array for verbose and debug to the profilerItem, but to gather the info and test it, this should be enough
 
             if ($this->profilerBag->isDebug()) {
-                if (!empty($data = $debugData())) {
+                if (!empty($debugData = $createDebugData()) || !empty($verboseData = $createVerboseData())) {
                     $debug = $profilerItem->getAdditionalData()['debug'] ?? [];
-                    $debug[] = $data;
+
+                    if (!empty($debugData)) {
+                        $debug[] = $debugData;
+                    }
+                    if (!empty($verboseData)) {
+                        $debug[] = $verboseData;
+                    }
+
                     $profilerItem->setAdditionalData('debug', $debug);
                 }
             } elseif ($this->profilerBag->isVerbose()) {
-                if (!empty($data = $verboseData())) {
+                if (!empty($verboseData = $createVerboseData())) {
                     $verbose = $profilerItem->getAdditionalData()['verbose'] ?? [];
-                    $verbose[] = $data;
+                    $verbose[] = $verboseData;
                     $profilerItem->setAdditionalData('verbose', $verbose);
                 }
             }
         }
     }
 
-    /** @phpstan-param callable(): array $data */
-    private function verbose(UuidInterface $profilerKey, callable $data): void
+    /** @phpstan-param callable(): array $createData */
+    private function verbose(UuidInterface $profilerKey, callable $createData): void
     {
-        $this->verboseOrDebug($profilerKey, $data, fn () => []);
+        $this->verboseOrDebug($profilerKey, $createData, fn () => []);
     }
 
-    /** @phpstan-param callable(): array $data */
-    private function debug(UuidInterface $profilerKey, callable $data): void
+    /** @phpstan-param callable(): array $createData */
+    private function debug(UuidInterface $profilerKey, callable $createData): void
     {
-        $this->verboseOrDebug($profilerKey, fn () => [], $data);
+        $this->verboseOrDebug($profilerKey, fn () => [], $createData);
     }
 }

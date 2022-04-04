@@ -7,6 +7,7 @@ use Lmc\Cqrs\Types\Decoder\ResponseDecoderInterface;
 use Lmc\Cqrs\Types\Utils;
 use Lmc\Cqrs\Types\ValueObject\DecodedValueInterface;
 use Lmc\Cqrs\Types\ValueObject\PrioritizedItem;
+use Ramsey\Uuid\UuidInterface;
 
 /**
  * @internal
@@ -78,8 +79,20 @@ trait CommonCQRSTrait
     {
         $context->setIsHandled(true);
 
-            $context->setUsedHandler($handler);
-            $context->setHandledResponseType(Utils::getType($response));
+        $context->setUsedHandler($handler);
+        $context->setHandledResponseType(Utils::getType($response));
+
+        $this->verboseOrDebug(
+            $context->getKey(),
+            fn () => [
+                'handled by' => Utils::getType($handler),
+                'response' => $context->getHandledResponseType(),
+            ],
+            fn () => [
+                'handled by' => Utils::getType($handler),
+                'response' => $response,
+            ]
+        );
     }
 
     /**
@@ -90,19 +103,56 @@ trait CommonCQRSTrait
         $initiator = $context->getInitiator();
         $currentResponse = $context->getResponse();
 
+        $this->verbose($context->getKey(), fn () => [
+            'start decoding response' => Utils::getType($currentResponse),
+        ]);
+
+        $i = -1;
         foreach ($this->decoders as $decoderItem) {
+            $i++;
             $decoder = $decoderItem->getItem();
+
+            $this->debug($context->getKey(), fn () => [
+                'loop' => $i,
+                'trying decoder' => Utils::getType($decoder),
+            ]);
 
             if (!$decoder->supports($currentResponse, $initiator)) {
                 continue;
             }
 
+            $this->debug($context->getKey(), fn () => [
+                'loop' => $i,
+                'decoder' => Utils::getType($decoder),
+                'supports response' => Utils::getType($currentResponse),
+            ]);
+
             $decodedResponse = $this->getDecodedResponse($context, $decoder, $currentResponse);
+
+            $this->verboseOrDebug(
+                $context->getKey(),
+                fn () => [
+                    'loop' => $i,
+                    'decoder' => Utils::getType($decoder),
+                    'response' => Utils::getType($currentResponse),
+                    'decoded response' => Utils::getType($decodedResponse),
+                ],
+                fn () => [
+                    'loop' => $i,
+                    'decoder' => Utils::getType($decoder),
+                    'response' => $currentResponse,
+                    'decoded response' => $decodedResponse,
+                ]
+            );
 
             $context->addUsedDecoder($decoder, $currentResponse, $decodedResponse);
             $continueDecoding = true;
 
             if ($decodedResponse instanceof DecodedValueInterface) {
+                $this->verbose($context->getKey(), fn () => [
+                    'decoding is finished' => Utils::getType($decodedResponse),
+                ]);
+
                 $continueDecoding = false;
                 $decodedResponse = $decodedResponse->getValue();
             }
@@ -115,5 +165,40 @@ trait CommonCQRSTrait
         }
 
         $context->setResponse($currentResponse);
+    }
+
+    private function verboseOrDebug(UuidInterface $profilerKey, callable $createVerboseData, callable $createDebugData): void
+    {
+        if ($this->profilerBag && ($profilerItem = $this->profilerBag->get($profilerKey))) {
+            if ($this->profilerBag->isDebug()) {
+                if (!empty($debugData = $createDebugData())) {
+                    $debug = $profilerItem->getAdditionalData()['CQRS.debug'] ?? [];
+                    $debug[] = $debugData;
+                    $profilerItem->setAdditionalData('CQRS.debug', $debug);
+                } elseif (!empty($verboseData = $createVerboseData())) {
+                    $debug = $profilerItem->getAdditionalData()['CQRS.debug'] ?? [];
+                    $debug[] = $verboseData;
+                    $profilerItem->setAdditionalData('CQRS.debug', $debug);
+                }
+            } elseif ($this->profilerBag->isVerbose()) {
+                if (!empty($verboseData = $createVerboseData())) {
+                    $verbose = $profilerItem->getAdditionalData()['CQRS.verbose'] ?? [];
+                    $verbose[] = $verboseData;
+                    $profilerItem->setAdditionalData('CQRS.verbose', $verbose);
+                }
+            }
+        }
+    }
+
+    /** @phpstan-param callable(): array $createData */
+    private function verbose(UuidInterface $profilerKey, callable $createData): void
+    {
+        $this->verboseOrDebug($profilerKey, $createData, fn () => []);
+    }
+
+    /** @phpstan-param callable(): array $createData */
+    private function debug(UuidInterface $profilerKey, callable $createData): void
+    {
+        $this->verboseOrDebug($profilerKey, fn () => [], $createData);
     }
 }

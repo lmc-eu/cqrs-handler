@@ -6,6 +6,7 @@ use Lmc\Cqrs\Handler\Fixture\CacheableProfileableQueryAdapter;
 use Lmc\Cqrs\Handler\Fixture\CacheableQueryAdapter;
 use Lmc\Cqrs\Handler\Fixture\DummyQuery;
 use Lmc\Cqrs\Handler\Fixture\DummyQueryHandler;
+use Lmc\Cqrs\Handler\Fixture\ImpureTranslationDecoder;
 use Lmc\Cqrs\Handler\Fixture\ProfileableQueryAdapter;
 use Lmc\Cqrs\Handler\Handler\GetCachedHandler;
 use Lmc\Cqrs\Types\Decoder\CallbackResponseDecoder;
@@ -885,5 +886,213 @@ class QueryFetcherTest extends AbstractTestCase
         foreach ($this->profilerBag->getIterator() as $profilerItem) {
             $this->assertCount(1, $profilerItem->getDecodedBy());
         }
+    }
+
+    /**
+     * @test
+     */
+    public function shouldCacheResponseBeforeDecodingByImpureDecoder(): void
+    {
+        $onError = new OnErrorCallback(fn (\Throwable $error) => $this->fail($error->getMessage()));
+        $expectsValueOnSuccess = fn (string $expectedValue) => new OnSuccessCallback(
+            fn ($data) => $this->assertSame($expectedValue, $data)
+        );
+
+        $key = new CacheKey('some-key');
+
+        $dummyQuery = new DummyQuery('fresh-data');
+        $query = new CacheableQueryAdapter($dummyQuery, $key, CacheTime::oneMinute());
+
+        $translationDecoder = new ImpureTranslationDecoder('cs');
+
+        $this->queryFetcher->addHandler(new DummyQueryHandler(), PrioritizedItem::PRIORITY_MEDIUM);
+        $this->queryFetcher->addDecoder($translationDecoder, PrioritizedItem::PRIORITY_MEDIUM);
+
+        $this->queryFetcher->fetch(
+            $query,
+            $expectsValueOnSuccess('translated[cs]: fresh-data'),
+            $onError
+        );
+
+        $item = $this->cache->getItem($key->getHashedKey());
+        $this->assertTrue($item->isHit());
+        $this->assertSame('fresh-data', $item->get());
+
+        $translationDecoder->changeLanguage('en');
+
+        $this->queryFetcher->fetch(
+            $query,
+            $expectsValueOnSuccess('translated[en]: fresh-data'),
+            $onError
+        );
+
+        $item = $this->cache->getItem($key->getHashedKey());
+        $this->assertTrue($item->isHit());
+        $this->assertSame('fresh-data', $item->get());
+    }
+
+    /**
+     * @test
+     * @dataProvider provideVerbosity
+     */
+    public function shouldUseProfilerBagVerbosity(
+        string $verbosity,
+        bool $withDecoder,
+        array $expectedAdditionalData
+    ): void {
+        $this->profilerBag->setVerbosity($verbosity);
+
+        $profilerId = 'some-profiler-key';
+        $cacheKey = new CacheKey('some-cache-key');
+        $dummyQuery = new DummyQuery('fresh-data');
+
+        $expectedResponse = $withDecoder
+            ? 'translated[cs]: fresh-data'
+            : 'fresh-data';
+        $expectedDecoders = $withDecoder
+            ? [ImpureTranslationDecoder::class . '<string, string>']
+            : [];
+
+        $this->queryFetcher->addHandler(new DummyQueryHandler(), PrioritizedItem::PRIORITY_MEDIUM);
+        if ($withDecoder) {
+            $this->queryFetcher->addDecoder(new ImpureTranslationDecoder('cs'), PrioritizedItem::PRIORITY_MEDIUM);
+        }
+
+        $this->assertCount(0, $this->profilerBag);
+
+        $this->queryFetcher->fetch(
+            new CacheableProfileableQueryAdapter(
+                $dummyQuery,
+                $cacheKey,
+                CacheTime::oneMinute(),
+                $profilerId,
+            ),
+            new OnSuccessCallback($this->ignore()),
+            new OnErrorCallback($this->ignore())
+        );
+
+        $this->assertCount(1, $this->profilerBag);
+
+        foreach ($this->profilerBag as $item) {
+            $this->assertSame($profilerId, $item->getProfilerId());
+            $this->assertSame($expectedAdditionalData, $item->getAdditionalData());
+            $this->assertSame(ProfilerItem::TYPE_QUERY, $item->getItemType());
+            $this->assertSame(CacheableProfileableQueryAdapter::class, $item->getType());
+            $this->assertSame($cacheKey, $item->getCacheKey());
+            $this->assertFalse($item->isLoadedFromCache());
+            $this->assertTrue($item->isStoredInCache());
+            $this->assertSame($expectedResponse, $item->getResponse());
+            $this->assertNull($item->getError());
+            $this->assertHandledBy(DummyQueryHandler::class, 'string', $item->getHandledBy());
+            $this->assertSame($expectedDecoders, $item->getDecodedBy());
+        }
+    }
+
+    public function provideVerbosity(): array
+    {
+        return [
+            // verbosity, withDecoder, expected
+            'default' => [
+                ProfilerBag::VERBOSITY_NORMAL,
+                false,
+                [],
+            ],
+            'verbose' => [
+                ProfilerBag::VERBOSITY_VERBOSE,
+                false,
+                [
+                    'CQRS.verbose' => [
+                        [
+                            'handled by' => DummyQueryHandler::class,
+                            'response' => 'string',
+                        ],
+                        [
+                            'start decoding response' => 'string',
+                        ],
+                    ],
+                ],
+            ],
+            'debug' => [
+                ProfilerBag::VERBOSITY_DEBUG,
+                false,
+                [
+                    'CQRS.debug' => [
+                        [
+                            'handled by' => DummyQueryHandler::class,
+                            'response' => 'fresh-data',
+                        ],
+                        [
+                            'start decoding response' => 'string',
+                        ],
+                        [
+                            'cache response' => 'fresh-data',
+                        ],
+                    ],
+                ],
+            ],
+            'default with decoder' => [
+                ProfilerBag::VERBOSITY_NORMAL,
+                true,
+                [],
+            ],
+            'verbose with decoder' => [
+                ProfilerBag::VERBOSITY_VERBOSE,
+                true,
+                [
+                    'CQRS.verbose' => [
+                        [
+                            'handled by' => DummyQueryHandler::class,
+                            'response' => 'string',
+                        ],
+                        [
+                            'start decoding response' => 'string',
+                        ],
+                        [
+                            'loop' => 0,
+                            'decoder' => ImpureTranslationDecoder::class,
+                            'response' => 'string',
+                            'decoded response' => 'string',
+                        ],
+                    ],
+                ],
+            ],
+            'debug with decoder' => [
+                ProfilerBag::VERBOSITY_DEBUG,
+                true,
+                [
+                    'CQRS.debug' => [
+                        [
+                            'handled by' => DummyQueryHandler::class,
+                            'response' => 'fresh-data',
+                        ],
+                        [
+                            'start decoding response' => 'string',
+                        ],
+                        [
+                            'loop' => 0,
+                            'trying decoder' => ImpureTranslationDecoder::class,
+                        ],
+                        [
+                            'loop' => 0,
+                            'decoder' => ImpureTranslationDecoder::class,
+                            'supports response' => 'string',
+                        ],
+                        [
+                            'impure decoder' => ImpureTranslationDecoder::class,
+                            'try cache response before decoding' => 'fresh-data',
+                        ],
+                        [
+                            'cache response' => 'fresh-data',
+                        ],
+                        [
+                            'loop' => 0,
+                            'decoder' => ImpureTranslationDecoder::class,
+                            'response' => 'fresh-data',
+                            'decoded response' => 'translated[cs]: fresh-data',
+                        ],
+                    ],
+                ],
+            ],
+        ];
     }
 }

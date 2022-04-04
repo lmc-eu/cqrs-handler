@@ -281,6 +281,11 @@ class QueryFetcher implements QueryFetcherInterface
         $query = $context->getInitiator();
 
         if ($query instanceof CacheableInterface && $decoder instanceof ImpureResponseDecoderInterface) {
+            $this->debug($context->getKey(), fn () => [
+                'impure decoder' => Utils::getType($decoder),
+                'try cache response before decoding' => $currentResponse,
+            ]);
+
             if ($this->shouldCacheResponse($context)) {
                 $this->cacheSuccess($query, $context, $currentResponse);
             }
@@ -310,6 +315,10 @@ class QueryFetcher implements QueryFetcherInterface
             && $this->isCacheEnabled()
             && ($lifetime = $query->getCacheTime()->getSeconds()) > 0
         ) {
+            $this->debug($context->getKey(), fn () => [
+                'cache response' => $response,
+            ]);
+
             $cacheItem = $this->cache->getItem($query->getCacheKey()->getHashedKey());
             $cacheItem->expiresAfter($lifetime);
             $cacheItem->set($response);

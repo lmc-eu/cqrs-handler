@@ -3,6 +3,7 @@
 <!-- There should always be "Unreleased" section at the beginning. -->
 
 ## Unreleased
+- Add handled response type to profiler item
 
 ## 1.2.1 - 2022-03-09
 - Fix profiling last used decoders when there are none

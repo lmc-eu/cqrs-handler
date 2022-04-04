@@ -11,6 +11,7 @@ use Lmc\Cqrs\Types\Feature\ProfileableInterface;
 use Lmc\Cqrs\Types\QueryFetcherInterface;
 use Lmc\Cqrs\Types\QueryHandlerInterface;
 use Lmc\Cqrs\Types\QueryInterface;
+use Lmc\Cqrs\Types\Utils;
 use Lmc\Cqrs\Types\ValueObject\OnErrorCallback;
 use Lmc\Cqrs\Types\ValueObject\OnErrorInterface;
 use Lmc\Cqrs\Types\ValueObject\OnSuccessCallback;
@@ -147,11 +148,11 @@ class QueryFetcher implements QueryFetcherInterface
                 $handler->handle(
                     $query,
                     new OnSuccessCallback(function ($response): void {
-                        $this->setIsHandled(true);
+                        $this->setIsHandled(true, $response);
                         $this->lastSuccess = $response;
                     }),
                     new OnErrorCallback(function (\Throwable $error): void {
-                        $this->setIsHandled(true);
+                        $this->setIsHandled(true, $error);
                         $this->lastError = $error;
                     }),
                 );
@@ -278,7 +279,11 @@ class QueryFetcher implements QueryFetcherInterface
                 $profilerItem->setDuration((int) $elapsed->getDuration());
             }
 
-            $profilerItem->setHandledBy(get_class($currentHandler));
+            $profilerItem->setHandledBy(sprintf(
+                '%s<%s>',
+                Utils::getType($currentHandler),
+                $this->handledResponseType
+            ));
             $profilerItem->setDecodedBy($this->lastUsedDecoders[$currentProfilerKey->toString()] ?? []);
 
             if ($query instanceof CacheableInterface) {

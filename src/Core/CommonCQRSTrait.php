@@ -23,6 +23,8 @@ trait CommonCQRSTrait
     private ?ProfilerBag $profilerBag;
 
     private bool $isHandled;
+    private ?string $handledResponseType = null;
+
     private ?\Throwable $lastError;
     /** @var array<string, string[]> */
     private array $lastUsedDecoders = [];
@@ -73,9 +75,11 @@ trait CommonCQRSTrait
         return $this->decoders;
     }
 
-    private function setIsHandled(bool $isHandled): void
+    /** @param mixed $response */
+    private function setIsHandled(bool $isHandled, $response = null): void
     {
         $this->isHandled = $isHandled;
+        $this->handledResponseType = Utils::getType($response);
     }
 
     /** @param CommandInterface<mixed>|QueryInterface<mixed> $initiator */

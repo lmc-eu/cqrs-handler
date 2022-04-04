@@ -82,7 +82,7 @@ class CommandSenderTest extends AbstractTestCase
             $this->assertNull($item->isStoredInCache());
             $this->assertSame('fresh-data', $item->getResponse());
             $this->assertNull($item->getError());
-            $this->assertSame(DummySendCommandHandler::class, $item->getHandledBy());
+            $this->assertHandledBy(DummySendCommandHandler::class, 'string', $item->getHandledBy());
             $this->assertSame([], $item->getDecodedBy());
         }
     }
@@ -165,7 +165,7 @@ class CommandSenderTest extends AbstractTestCase
             $this->assertSame($profilerId, $item->getProfilerId());
             $this->assertSame(ProfilerItem::TYPE_COMMAND, $item->getItemType());
             $this->assertSame('decoded:fresh-data', $item->getResponse());
-            $this->assertSame(DummySendCommandHandler::class, $item->getHandledBy());
+            $this->assertHandledBy(DummySendCommandHandler::class, 'string', $item->getHandledBy());
         }
     }
 
@@ -199,7 +199,7 @@ class CommandSenderTest extends AbstractTestCase
             $this->assertNull($item->isStoredInCache());
             $this->assertSame('fresh-data', $item->getResponse());
             $this->assertNull($item->getError());
-            $this->assertSame(DummySendCommandHandler::class, $item->getHandledBy());
+            $this->assertHandledBy(DummySendCommandHandler::class, 'string', $item->getHandledBy());
         }
     }
 
@@ -289,7 +289,7 @@ class CommandSenderTest extends AbstractTestCase
             $this->assertNull($item->isStoredInCache());
             $this->assertSame($expectedResponse, $item->getResponse());
             $this->assertNull($item->getError());
-            $this->assertSame(DummySendCommandHandler::class, $item->getHandledBy());
+            $this->assertHandledBy(DummySendCommandHandler::class, 'string', $item->getHandledBy());
             $this->assertSame(
                 [
                     'Lmc\Cqrs\Types\Decoder\CallbackResponseDecoder<string, string>',
@@ -346,7 +346,7 @@ class CommandSenderTest extends AbstractTestCase
             $this->assertNull($item->isStoredInCache());
             $this->assertSame($expectedResponse, $item->getResponse());
             $this->assertNull($item->getError());
-            $this->assertSame(DummySendCommandHandler::class, $item->getHandledBy());
+            $this->assertHandledBy(DummySendCommandHandler::class, 'string', $item->getHandledBy());
             $this->assertSame(
                 ['Lmc\Cqrs\Types\Decoder\CallbackResponseDecoder<string, DecodedValue<string>>'],
                 $item->getDecodedBy()

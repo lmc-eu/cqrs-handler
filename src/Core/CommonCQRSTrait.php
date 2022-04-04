@@ -3,15 +3,17 @@
 namespace Lmc\Cqrs\Handler\Core;
 
 use Lmc\Cqrs\Handler\ProfilerBag;
-use Lmc\Cqrs\Types\CommandInterface;
 use Lmc\Cqrs\Types\Decoder\ResponseDecoderInterface;
-use Lmc\Cqrs\Types\QueryInterface;
 use Lmc\Cqrs\Types\Utils;
 use Lmc\Cqrs\Types\ValueObject\DecodedValueInterface;
 use Lmc\Cqrs\Types\ValueObject\PrioritizedItem;
-use Ramsey\Uuid\UuidInterface;
-use Symfony\Component\Stopwatch\Stopwatch;
 
+/**
+ * @internal
+ *
+ * @phpstan-template Context
+ * @phpstan-template Handler
+ */
 trait CommonCQRSTrait
 {
     /**
@@ -21,15 +23,6 @@ trait CommonCQRSTrait
     private array $decoders = [];
 
     private ?ProfilerBag $profilerBag;
-
-    private bool $isHandled;
-    private ?string $handledResponseType = null;
-
-    private ?\Throwable $lastError;
-    /** @var array<string, string[]> */
-    private array $lastUsedDecoders = [];
-
-    private ?Stopwatch $stopwatch;
 
     public static function getDefaultPriority(): int
     {
@@ -75,60 +68,52 @@ trait CommonCQRSTrait
         return $this->decoders;
     }
 
-    /** @param mixed $response */
-    private function setIsHandled(bool $isHandled, $response = null): void
+    /**
+     * @phpstan-param Handler $handler
+     * @phpstan-param Context $context
+     * @param mixed $handler
+     * @param mixed $response
+     */
+    private function setIsHandled($handler, AbstractContext $context, $response = null): void
     {
-        $this->isHandled = $isHandled;
-        $this->handledResponseType = Utils::getType($response);
+        $context->setIsHandled(true);
+
+            $context->setUsedHandler($handler);
+            $context->setHandledResponseType(Utils::getType($response));
     }
 
-    /** @param CommandInterface<mixed>|QueryInterface<mixed> $initiator */
-    private function decodeResponse($initiator, ?UuidInterface $currentProfileKey): void
+    /**
+     * @phpstan-param Context $context
+     */
+    private function decodeResponse(AbstractContext $context): void
     {
-        $currentResponse = $this->lastSuccess;
-
-        $profilerKey = $currentProfileKey
-            ? $currentProfileKey->toString()
-            : null;
-
-        if ($profilerKey) {
-            $this->lastUsedDecoders[$profilerKey] = [];
-        }
+        $initiator = $context->getInitiator();
+        $currentResponse = $context->getResponse();
 
         foreach ($this->decoders as $decoderItem) {
             $decoder = $decoderItem->getItem();
 
-            if ($decoder->supports($currentResponse, $initiator)) {
-                $decodedResponse = $decoder->decode($currentResponse);
+            if (!$decoder->supports($currentResponse, $initiator)) {
+                continue;
+            }
 
-                if ($decodedResponse instanceof DecodedValueInterface) {
-                    $decodedResponse = $decodedResponse->getValue();
+            $decodedResponse = $this->getDecodedResponse($context, $decoder, $currentResponse);
 
-                    if ($profilerKey) {
-                        $this->lastUsedDecoders[$profilerKey][] = sprintf(
-                            '%s<%s, DecodedValue<%s>>',
-                            get_class($decoder),
-                            Utils::getType($currentResponse),
-                            Utils::getType($decodedResponse)
-                        );
-                    }
-                    $currentResponse = $decodedResponse;
+            $context->addUsedDecoder($decoder, $currentResponse, $decodedResponse);
+            $continueDecoding = true;
 
-                    break;
-                }
+            if ($decodedResponse instanceof DecodedValueInterface) {
+                $continueDecoding = false;
+                $decodedResponse = $decodedResponse->getValue();
+            }
 
-                if ($profilerKey) {
-                    $this->lastUsedDecoders[$profilerKey][] = sprintf(
-                        '%s<%s, %s>',
-                        get_class($decoder),
-                        Utils::getType($currentResponse),
-                        Utils::getType($decodedResponse)
-                    );
-                }
-                $currentResponse = $decodedResponse;
+            $currentResponse = $decodedResponse;
+
+            if (!$continueDecoding) {
+                break;
             }
         }
 
-        $this->lastSuccess = $currentResponse;
+        $context->setResponse($currentResponse);
     }
 }

@@ -4,6 +4,9 @@
 
 ## Unreleased
 - Add handled response type to profiler item
+- Handle Impure Decoder
+  - Cache response before Impure Decoder decodes the response
+  - Fix scope of the fetch query/send command methods, which may overlaps with nested queries in impure decoding
 
 ## 1.2.1 - 2022-03-09
 - Fix profiling last used decoders when there are none

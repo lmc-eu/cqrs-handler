@@ -3,6 +3,8 @@
 <!-- There should always be "Unreleased" section at the beginning. -->
 
 ## Unreleased
+
+## 1.3.0 - 2022-04-05
 - Add handled response type to profiler item
 - Handle Impure Decoder
   - Cache response before Impure Decoder decodes the response

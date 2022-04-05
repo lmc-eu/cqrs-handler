@@ -4,6 +4,7 @@ namespace Lmc\Cqrs\Handler;
 
 use Lmc\Cqrs\Handler\Fixture\DummyCommand;
 use Lmc\Cqrs\Handler\Fixture\DummySendCommandHandler;
+use Lmc\Cqrs\Handler\Fixture\ImpureTranslationDecoder;
 use Lmc\Cqrs\Handler\Fixture\ProfileableCommandAdapter;
 use Lmc\Cqrs\Types\CommandInterface;
 use Lmc\Cqrs\Types\CommandSenderInterface;
@@ -82,7 +83,7 @@ class CommandSenderTest extends AbstractTestCase
             $this->assertNull($item->isStoredInCache());
             $this->assertSame('fresh-data', $item->getResponse());
             $this->assertNull($item->getError());
-            $this->assertSame(DummySendCommandHandler::class, $item->getHandledBy());
+            $this->assertHandledBy(DummySendCommandHandler::class, 'string', $item->getHandledBy());
             $this->assertSame([], $item->getDecodedBy());
         }
     }
@@ -165,7 +166,7 @@ class CommandSenderTest extends AbstractTestCase
             $this->assertSame($profilerId, $item->getProfilerId());
             $this->assertSame(ProfilerItem::TYPE_COMMAND, $item->getItemType());
             $this->assertSame('decoded:fresh-data', $item->getResponse());
-            $this->assertSame(DummySendCommandHandler::class, $item->getHandledBy());
+            $this->assertHandledBy(DummySendCommandHandler::class, 'string', $item->getHandledBy());
         }
     }
 
@@ -199,7 +200,7 @@ class CommandSenderTest extends AbstractTestCase
             $this->assertNull($item->isStoredInCache());
             $this->assertSame('fresh-data', $item->getResponse());
             $this->assertNull($item->getError());
-            $this->assertSame(DummySendCommandHandler::class, $item->getHandledBy());
+            $this->assertHandledBy(DummySendCommandHandler::class, 'string', $item->getHandledBy());
         }
     }
 
@@ -289,7 +290,7 @@ class CommandSenderTest extends AbstractTestCase
             $this->assertNull($item->isStoredInCache());
             $this->assertSame($expectedResponse, $item->getResponse());
             $this->assertNull($item->getError());
-            $this->assertSame(DummySendCommandHandler::class, $item->getHandledBy());
+            $this->assertHandledBy(DummySendCommandHandler::class, 'string', $item->getHandledBy());
             $this->assertSame(
                 [
                     'Lmc\Cqrs\Types\Decoder\CallbackResponseDecoder<string, string>',
@@ -346,7 +347,7 @@ class CommandSenderTest extends AbstractTestCase
             $this->assertNull($item->isStoredInCache());
             $this->assertSame($expectedResponse, $item->getResponse());
             $this->assertNull($item->getError());
-            $this->assertSame(DummySendCommandHandler::class, $item->getHandledBy());
+            $this->assertHandledBy(DummySendCommandHandler::class, 'string', $item->getHandledBy());
             $this->assertSame(
                 ['Lmc\Cqrs\Types\Decoder\CallbackResponseDecoder<string, DecodedValue<string>>'],
                 $item->getDecodedBy()
@@ -384,5 +385,156 @@ class CommandSenderTest extends AbstractTestCase
         foreach ($this->profilerBag->getIterator() as $profilerItem) {
             $this->assertCount(1, $profilerItem->getDecodedBy());
         }
+    }
+
+    /**
+     * @test
+     * @dataProvider provideVerbosity
+     */
+    public function shouldUseProfilerBagVerbosity(
+        string $verbosity,
+        bool $withDecoder,
+        array $expectedAdditionalData
+    ): void {
+        $this->profilerBag->setVerbosity($verbosity);
+
+        $profilerId = 'some-profiler-id';
+        $commandBody = 'some-command-data';
+        $dummyCommand = new DummyCommand('fresh-data');
+
+        $expectedResponse = $withDecoder
+            ? 'translated[cs]: fresh-data'
+            : 'fresh-data';
+        $expectedDecoders = $withDecoder
+            ? [ImpureTranslationDecoder::class . '<string, string>']
+            : [];
+
+        $expectedAdditionalData['body'] = $commandBody;
+
+        $this->commandSender->addHandler(new DummySendCommandHandler(), PrioritizedItem::PRIORITY_MEDIUM);
+        if ($withDecoder) {
+            $this->commandSender->addDecoder(new ImpureTranslationDecoder('cs'), PrioritizedItem::PRIORITY_MEDIUM);
+        }
+
+        $this->assertCount(0, $this->profilerBag);
+
+        $decodedResponse = $this->commandSender->sendAndReturn(
+            new ProfileableCommandAdapter($dummyCommand, $profilerId, ['body' => $commandBody])
+        );
+
+        $this->assertSame($expectedResponse, $decodedResponse);
+
+        $this->assertCount(1, $this->profilerBag);
+
+        foreach ($this->profilerBag as $item) {
+            $this->assertSame($profilerId, $item->getProfilerId());
+            $this->assertEquals($expectedAdditionalData, $item->getAdditionalData());
+            $this->assertSame(ProfilerItem::TYPE_COMMAND, $item->getItemType());
+            $this->assertSame(ProfileableCommandAdapter::class, $item->getType());
+            $this->assertNull($item->getCacheKey());
+            $this->assertNull($item->isStoredInCache());
+            $this->assertSame($expectedResponse, $item->getResponse());
+            $this->assertNull($item->getError());
+            $this->assertHandledBy(DummySendCommandHandler::class, 'string', $item->getHandledBy());
+            $this->assertSame($expectedDecoders, $item->getDecodedBy());
+        }
+    }
+
+    public function provideVerbosity(): array
+    {
+        return [
+            // verbosity, withDecoder, expected
+            'default' => [
+                ProfilerBag::VERBOSITY_NORMAL,
+                false,
+                [],
+            ],
+            'verbose' => [
+                ProfilerBag::VERBOSITY_VERBOSE,
+                false,
+                [
+                    'CQRS.verbose' => [
+                        [
+                            'handled by' => DummySendCommandHandler::class,
+                            'response' => 'string',
+                        ],
+                        [
+                            'start decoding response' => 'string',
+                        ],
+                    ],
+                ],
+            ],
+            'debug' => [
+                ProfilerBag::VERBOSITY_DEBUG,
+                false,
+                [
+                    'CQRS.debug' => [
+                        [
+                            'handled by' => DummySendCommandHandler::class,
+                            'response' => 'fresh-data',
+                        ],
+                        [
+                            'start decoding response' => 'string',
+                        ],
+                    ],
+                ],
+            ],
+            'default with decoder' => [
+                ProfilerBag::VERBOSITY_NORMAL,
+                true,
+                [],
+            ],
+            'verbose with decoder' => [
+                ProfilerBag::VERBOSITY_VERBOSE,
+                true,
+                [
+                    'CQRS.verbose' => [
+                        [
+                            'handled by' => DummySendCommandHandler::class,
+                            'response' => 'string',
+                        ],
+                        [
+                            'start decoding response' => 'string',
+                        ],
+                        [
+                            'loop' => 0,
+                            'decoder' => ImpureTranslationDecoder::class,
+                            'response' => 'string',
+                            'decoded response' => 'string',
+                        ],
+                    ],
+                ],
+            ],
+            'debug with decoder' => [
+                ProfilerBag::VERBOSITY_DEBUG,
+                true,
+                [
+                    'CQRS.debug' => [
+                        [
+                            'handled by' => DummySendCommandHandler::class,
+                            'response' => 'fresh-data',
+                        ],
+                        [
+                            'start decoding response' => 'string',
+                        ],
+                        [
+                            'loop' => 0,
+                            'trying decoder' => ImpureTranslationDecoder::class,
+                        ],
+                        [
+                            'loop' => 0,
+                            'decoder' => ImpureTranslationDecoder::class,
+                            'supports response' => 'string',
+                        ],
+                        [
+                            'loop' => 0,
+                            'decoder' => ImpureTranslationDecoder::class,
+                            'response' => 'fresh-data',
+                            'decoded response' => 'translated[cs]: fresh-data',
+                        ],
+                    ],
+                ],
+            ],
+        ];
     }
 }

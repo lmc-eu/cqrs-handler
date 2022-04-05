@@ -3,15 +3,18 @@
 namespace Lmc\Cqrs\Handler\Core;
 
 use Lmc\Cqrs\Handler\ProfilerBag;
-use Lmc\Cqrs\Types\CommandInterface;
 use Lmc\Cqrs\Types\Decoder\ResponseDecoderInterface;
-use Lmc\Cqrs\Types\QueryInterface;
 use Lmc\Cqrs\Types\Utils;
 use Lmc\Cqrs\Types\ValueObject\DecodedValueInterface;
 use Lmc\Cqrs\Types\ValueObject\PrioritizedItem;
 use Ramsey\Uuid\UuidInterface;
-use Symfony\Component\Stopwatch\Stopwatch;
 
+/**
+ * @internal
+ *
+ * @phpstan-template Context
+ * @phpstan-template Handler
+ */
 trait CommonCQRSTrait
 {
     /**
@@ -21,13 +24,6 @@ trait CommonCQRSTrait
     private array $decoders = [];
 
     private ?ProfilerBag $profilerBag;
-
-    private bool $isHandled;
-    private ?\Throwable $lastError;
-    /** @var array<string, string[]> */
-    private array $lastUsedDecoders = [];
-
-    private ?Stopwatch $stopwatch;
 
     public static function getDefaultPriority(): int
     {
@@ -73,58 +69,136 @@ trait CommonCQRSTrait
         return $this->decoders;
     }
 
-    private function setIsHandled(bool $isHandled): void
+    /**
+     * @phpstan-param Handler $handler
+     * @phpstan-param Context $context
+     * @param mixed $handler
+     * @param mixed $response
+     */
+    private function setIsHandled($handler, AbstractContext $context, $response = null): void
     {
-        $this->isHandled = $isHandled;
+        $context->setIsHandled(true);
+
+        $context->setUsedHandler($handler);
+        $context->setHandledResponseType(Utils::getType($response));
+
+        $this->verboseOrDebug(
+            $context->getKey(),
+            fn () => [
+                'handled by' => Utils::getType($handler),
+                'response' => $context->getHandledResponseType(),
+            ],
+            fn () => [
+                'handled by' => Utils::getType($handler),
+                'response' => $response,
+            ]
+        );
     }
 
-    /** @param CommandInterface<mixed>|QueryInterface<mixed> $initiator */
-    private function decodeResponse($initiator, ?UuidInterface $currentProfileKey): void
+    /**
+     * @phpstan-param Context $context
+     */
+    private function decodeResponse(AbstractContext $context): void
     {
-        $currentResponse = $this->lastSuccess;
+        $initiator = $context->getInitiator();
+        $currentResponse = $context->getResponse();
 
-        $profilerKey = $currentProfileKey
-            ? $currentProfileKey->toString()
-            : null;
+        $this->verbose($context->getKey(), fn () => [
+            'start decoding response' => Utils::getType($currentResponse),
+        ]);
 
-        if ($profilerKey) {
-            $this->lastUsedDecoders[$profilerKey] = [];
-        }
-
+        $i = -1;
         foreach ($this->decoders as $decoderItem) {
+            $i++;
             $decoder = $decoderItem->getItem();
 
-            if ($decoder->supports($currentResponse, $initiator)) {
-                $decodedResponse = $decoder->decode($currentResponse);
+            $this->debug($context->getKey(), fn () => [
+                'loop' => $i,
+                'trying decoder' => Utils::getType($decoder),
+            ]);
 
-                if ($decodedResponse instanceof DecodedValueInterface) {
-                    $decodedResponse = $decodedResponse->getValue();
+            if (!$decoder->supports($currentResponse, $initiator)) {
+                continue;
+            }
 
-                    if ($profilerKey) {
-                        $this->lastUsedDecoders[$profilerKey][] = sprintf(
-                            '%s<%s, DecodedValue<%s>>',
-                            get_class($decoder),
-                            Utils::getType($currentResponse),
-                            Utils::getType($decodedResponse)
-                        );
-                    }
-                    $currentResponse = $decodedResponse;
+            $this->debug($context->getKey(), fn () => [
+                'loop' => $i,
+                'decoder' => Utils::getType($decoder),
+                'supports response' => Utils::getType($currentResponse),
+            ]);
 
-                    break;
-                }
+            $decodedResponse = $this->getDecodedResponse($context, $decoder, $currentResponse);
 
-                if ($profilerKey) {
-                    $this->lastUsedDecoders[$profilerKey][] = sprintf(
-                        '%s<%s, %s>',
-                        get_class($decoder),
-                        Utils::getType($currentResponse),
-                        Utils::getType($decodedResponse)
-                    );
-                }
-                $currentResponse = $decodedResponse;
+            $this->verboseOrDebug(
+                $context->getKey(),
+                fn () => [
+                    'loop' => $i,
+                    'decoder' => Utils::getType($decoder),
+                    'response' => Utils::getType($currentResponse),
+                    'decoded response' => Utils::getType($decodedResponse),
+                ],
+                fn () => [
+                    'loop' => $i,
+                    'decoder' => Utils::getType($decoder),
+                    'response' => $currentResponse,
+                    'decoded response' => $decodedResponse,
+                ]
+            );
+
+            $context->addUsedDecoder($decoder, $currentResponse, $decodedResponse);
+            $continueDecoding = true;
+
+            if ($decodedResponse instanceof DecodedValueInterface) {
+                $this->verbose($context->getKey(), fn () => [
+                    'decoding is finished' => Utils::getType($decodedResponse),
+                ]);
+
+                $continueDecoding = false;
+                $decodedResponse = $decodedResponse->getValue();
+            }
+
+            $currentResponse = $decodedResponse;
+
+            if (!$continueDecoding) {
+                break;
             }
         }
 
-        $this->lastSuccess = $currentResponse;
+        $context->setResponse($currentResponse);
+    }
+
+    private function verboseOrDebug(UuidInterface $profilerKey, callable $createVerboseData, callable $createDebugData): void
+    {
+        if ($this->profilerBag && ($profilerItem = $this->profilerBag->get($profilerKey))) {
+            if ($this->profilerBag->isDebug()) {
+                if (!empty($debugData = $createDebugData())) {
+                    $debug = $profilerItem->getAdditionalData()['CQRS.debug'] ?? [];
+                    $debug[] = $debugData;
+                    $profilerItem->setAdditionalData('CQRS.debug', $debug);
+                } elseif (!empty($verboseData = $createVerboseData())) {
+                    $debug = $profilerItem->getAdditionalData()['CQRS.debug'] ?? [];
+                    $debug[] = $verboseData;
+                    $profilerItem->setAdditionalData('CQRS.debug', $debug);
+                }
+            } elseif ($this->profilerBag->isVerbose()) {
+                if (!empty($verboseData = $createVerboseData())) {
+                    $verbose = $profilerItem->getAdditionalData()['CQRS.verbose'] ?? [];
+                    $verbose[] = $verboseData;
+                    $profilerItem->setAdditionalData('CQRS.verbose', $verbose);
+                }
+            }
+        }
+    }
+
+    /** @phpstan-param callable(): array $createData */
+    private function verbose(UuidInterface $profilerKey, callable $createData): void
+    {
+        $this->verboseOrDebug($profilerKey, $createData, fn () => []);
+    }
+
+    /** @phpstan-param callable(): array $createData */
+    private function debug(UuidInterface $profilerKey, callable $createData): void
+    {
+        $this->verboseOrDebug($profilerKey, fn () => [], $createData);
     }
 }

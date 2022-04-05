@@ -261,3 +261,18 @@ Service, which is a collection of all profiler information in the current reques
 If you pass it to the `QueryFetcher` or `CommandSender`, they will profile query/command implementing `ProfileableInterface` to the `ProfilerBag`.
 
 The information inside are used by a `CqrsDataCollector`, which shows them in the Symfony profiler (used in [CQRS/Bundle](https://github.com/lmc-eu/cqrs-bundle)).
+
+### Verbosity
+Profiler bag can also hold an information about a verbosity level of profiling.
+
+Levels:
+- NORMAL = `empty value` (**default**)
+- VERBOSE = `'verbose'`
+- DEBUG = `'debug'`
+
+There might be additional data added to the `ProfilerItem` with higher levels of verbosity. 
+
+You can set it by 
+```php
+$profilerBag->setVerbosity(ProfilerBag::VERBOSITY_VERBOSE);
+```

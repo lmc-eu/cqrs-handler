@@ -8,6 +8,18 @@ use Ramsey\Uuid\UuidInterface;
 /** @phpstan-implements \IteratorAggregate<string, ProfilerItem> */
 class ProfilerBag implements \IteratorAggregate, \Countable
 {
+    public const VERBOSITY_NORMAL = '';
+    public const VERBOSITY_VERBOSE = 'verbose';
+    public const VERBOSITY_DEBUG = 'debug';
+
+    private const VERBOSITY = [
+        self::VERBOSITY_NORMAL,
+        self::VERBOSITY_VERBOSE,
+        self::VERBOSITY_DEBUG,
+    ];
+
+    private string $verbosity = self::VERBOSITY_NORMAL;
+
     /** @var array<string, ProfilerItem> */
     private array $bag;
 
@@ -40,5 +52,28 @@ class ProfilerBag implements \IteratorAggregate, \Countable
     public function count(): int
     {
         return count($this->bag);
+    }
+
+    public function setVerbosity(string $verbosity): void
+    {
+        $this->verbosity = in_array($verbosity, self::VERBOSITY, true)
+            ? $verbosity
+            : $this->verbosity;
+    }
+
+    public function getVerbosity(): string
+    {
+        return $this->verbosity;
+    }
+
+    public function isVerbose(): bool
+    {
+        return $this->verbosity === self::VERBOSITY_VERBOSE
+            || $this->verbosity === self::VERBOSITY_DEBUG;
+    }
+
+    public function isDebug(): bool
+    {
+        return $this->verbosity === self::VERBOSITY_DEBUG;
     }
 }

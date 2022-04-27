@@ -7,11 +7,8 @@ use Lmc\Cqrs\Types\Decoder\ImpureResponseDecoderInterface;
 /** @phpstan-implements ImpureResponseDecoderInterface<string, string> */
 class ImpureTranslationDecoder implements ImpureResponseDecoderInterface
 {
-    private string $language;
-
-    public function __construct(string $language)
+    public function __construct(private string $language)
     {
-        $this->language = $language;
     }
 
     public function changeLanguage(string $language): void
@@ -19,12 +16,12 @@ class ImpureTranslationDecoder implements ImpureResponseDecoderInterface
         $this->language = $language;
     }
 
-    public function supports($response, $initiator): bool
+    public function supports(mixed $response, mixed $initiator): bool
     {
         return is_string($response);
     }
 
-    public function decode($response)
+    public function decode(mixed $response): mixed
     {
         return sprintf('translated[%s]: %s', $this->language, $response);
     }

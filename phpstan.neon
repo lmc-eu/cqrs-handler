@@ -1,8 +1,17 @@
 parameters:
     checkMissingIterableValueType: false
-    level: 7
+    level: 8
     paths:
         - src
         - tests/
 
     ignoreErrors:
+        -
+            message: "#^Cannot call method getItem\\(\\) on Psr\\\\Cache\\\\CacheItemPoolInterface\\|null\\.$#"
+            count: 1
+            path: src/QueryFetcher.php
+
+        -
+            message: "#^Cannot call method save\\(\\) on Psr\\\\Cache\\\\CacheItemPoolInterface\\|null\\.$#"
+            count: 1
+            path: src/QueryFetcher.php

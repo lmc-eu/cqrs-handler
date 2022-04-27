@@ -14,27 +14,14 @@ use Lmc\Cqrs\Types\ValueObject\CacheTime;
  */
 class CacheableProfileableQueryAdapter implements QueryInterface, CacheableInterface, ProfileableInterface
 {
-    /** @phpstan-var QueryInterface<Request> */
-    private QueryInterface $query;
-
-    private CacheKey $cacheKey;
-    private CacheTime $cacheTime;
-    private string $profileId;
-    private ?array $profileData;
-
     /** @phpstan-param QueryInterface<Request> $query */
     public function __construct(
-        QueryInterface $query,
-        CacheKey $cacheKey,
-        CacheTime $cacheTime,
-        string $profileId,
-        ?array $profileData = null
+        private QueryInterface $query,
+        private CacheKey $cacheKey,
+        private CacheTime $cacheTime,
+        private string $profileId,
+        private ?array $profileData = null,
     ) {
-        $this->query = $query;
-        $this->cacheKey = $cacheKey;
-        $this->cacheTime = $cacheTime;
-        $this->profileId = $profileId;
-        $this->profileData = $profileData;
     }
 
     public function getCacheKey(): CacheKey
@@ -52,7 +39,7 @@ class CacheableProfileableQueryAdapter implements QueryInterface, CacheableInter
         return $this->query->getRequestType();
     }
 
-    public function createRequest()
+    public function createRequest(): mixed
     {
         return $this->query->createRequest();
     }

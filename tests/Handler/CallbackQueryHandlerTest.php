@@ -34,17 +34,16 @@ class CallbackQueryHandlerTest extends AbstractTestCase
 
     /**
      * @param QueryInterface<callable(): mixed> $query
-     * @param mixed $expectedResult
      *
      * @dataProvider provideCallableQuery
      * @test
      */
-    public function shouldHandleCallableQuery(QueryInterface $query, $expectedResult): void
+    public function shouldHandleCallableQuery(QueryInterface $query, mixed $expectedResult): void
     {
         $this->handler->handle(
             $query,
             new OnSuccessCallback(fn ($data) => $this->assertSame($expectedResult, $data)),
-            new OnErrorCallback(fn (\Throwable $e) => $this->fail($e->getMessage()))
+            new OnErrorCallback(fn (\Throwable $e) => $this->fail($e->getMessage())),
         );
     }
 

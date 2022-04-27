@@ -28,13 +28,13 @@ use Psr\Cache\CacheItemPoolInterface;
  * @phpstan-template DecodedResponse
  *
  * @phpstan-type Handler QueryHandlerInterface<Request, Response>
- * @phpstan-type Context FetchContext<Request, Handler, DecodedResponse>
+ * @phpstan-type Context FetchContext<Request, Response>
  *
  * @phpstan-implements QueryFetcherInterface<Request, DecodedResponse>
  */
 class QueryFetcher implements QueryFetcherInterface
 {
-    /** @phpstan-use CommonCQRSTrait<Context, Handler> */
+    /** @phpstan-use CommonCQRSTrait<Request, Response, Context, Handler> */
     use CommonCQRSTrait;
 
     /**
@@ -42,9 +42,6 @@ class QueryFetcher implements QueryFetcherInterface
      * @var PrioritizedItem[]
      */
     private array $handlers = [];
-
-    private bool $isCacheEnabled;
-    private ?CacheItemPoolInterface $cache;
 
     /**
      * Custom Handler(s) priority defaults to 50 (medium)
@@ -73,18 +70,16 @@ class QueryFetcher implements QueryFetcherInterface
      * @see PrioritizedItem::PRIORITY_MEDIUM
      */
     public function __construct(
-        bool $isCacheEnabled,
-        ?CacheItemPoolInterface $cache,
+        private bool $isCacheEnabled,
+        private ?CacheItemPoolInterface $cache,
         ?ProfilerBag $profilerBag,
         iterable $customHandlers = [],
-        iterable $customDecoders = []
+        iterable $customDecoders = [],
     ) {
         if ($isCacheEnabled && $cache === null) {
             throw new \InvalidArgumentException('Cache pool must be set if cache is enabled.');
         }
 
-        $this->isCacheEnabled = $isCacheEnabled;
-        $this->cache = $cache;
         $this->profilerBag = $profilerBag;
 
         $this->register($customHandlers, [$this, 'addHandler']);
@@ -120,7 +115,7 @@ class QueryFetcher implements QueryFetcherInterface
         QueryInterface $query,
         OnSuccessInterface $onSuccess,
         OnErrorInterface $onError,
-        callable $filter = null
+        callable $filter = null,
     ): void {
         $context = new FetchContext($query);
 
@@ -188,9 +183,8 @@ class QueryFetcher implements QueryFetcherInterface
      * @phpstan-param QueryInterface<Request> $query
      * @phpstan-return DecodedResponse
      * @throws \Throwable
-     * @return mixed
      */
-    public function fetchAndReturn(QueryInterface $query)
+    public function fetchAndReturn(QueryInterface $query): mixed
     {
         return $this->fetchAndReturnQuery($query, [$this, 'fetch']);
     }
@@ -199,9 +193,8 @@ class QueryFetcher implements QueryFetcherInterface
      * @phpstan-param QueryInterface<Request> $query
      * @phpstan-return DecodedResponse
      * @throws \Throwable
-     * @return mixed
      */
-    public function fetchFreshAndReturn(QueryInterface $query)
+    public function fetchFreshAndReturn(QueryInterface $query): mixed
     {
         return $this->fetchAndReturnQuery($query, [$this, 'fetchFresh']);
     }
@@ -210,9 +203,8 @@ class QueryFetcher implements QueryFetcherInterface
      * @phpstan-param QueryInterface<Request> $query
      * @phpstan-return DecodedResponse
      * @throws \Throwable
-     * @return mixed
      */
-    private function fetchAndReturnQuery(QueryInterface $query, callable $fetch)
+    private function fetchAndReturnQuery(QueryInterface $query, callable $fetch): mixed
     {
         $response = null;
 
@@ -221,7 +213,7 @@ class QueryFetcher implements QueryFetcherInterface
             new OnSuccessCallback(function ($decodedResponse) use (&$response): void {
                 $response = $decodedResponse;
             }),
-            OnErrorCallback::throwOnError()
+            OnErrorCallback::throwOnError(),
         );
 
         return $response;
@@ -231,7 +223,7 @@ class QueryFetcher implements QueryFetcherInterface
     {
         $handlers = array_map(
             fn (PrioritizedItem $PrioritizedItem) => $PrioritizedItem->getItem(),
-            $this->handlers
+            $this->handlers,
         );
 
         return $filter
@@ -249,7 +241,7 @@ class QueryFetcher implements QueryFetcherInterface
                 $query->getProfilerId(),
                 $query->getProfilerData(),
                 ProfilerItem::TYPE_QUERY,
-                get_class($query)
+                get_class($query),
             );
 
             if ($query instanceof CacheableInterface) {
@@ -271,12 +263,11 @@ class QueryFetcher implements QueryFetcherInterface
      * @phpstan-param ResponseDecoderInterface<T, U> $decoder
      * @phpstan-param T $currentResponse
      * @phpstan-return U
-     * @param mixed $currentResponse
      */
     private function getDecodedResponse(
         FetchContext $context,
         ResponseDecoderInterface $decoder,
-        $currentResponse
+        mixed $currentResponse,
     ) {
         $query = $context->getInitiator();
 
@@ -307,9 +298,8 @@ class QueryFetcher implements QueryFetcherInterface
 
     /**
      * @phpstan-param Context $context
-     * @param mixed $response
      */
-    private function cacheSuccess(CacheableInterface $query, FetchContext $context, $response): void
+    private function cacheSuccess(CacheableInterface $query, FetchContext $context, mixed $response): void
     {
         if ($this->cache
             && $this->isCacheEnabled()
@@ -347,7 +337,7 @@ class QueryFetcher implements QueryFetcherInterface
             $profilerItem->setHandledBy(sprintf(
                 '%s<%s>',
                 Utils::getType($currentHandler),
-                $context->getHandledResponseType()
+                $context->getHandledResponseType(),
             ));
             $profilerItem->setDecodedBy($context->getUsedDecoders());
 

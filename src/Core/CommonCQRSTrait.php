@@ -4,6 +4,8 @@ namespace Lmc\Cqrs\Handler\Core;
 
 use Lmc\Cqrs\Handler\ProfilerBag;
 use Lmc\Cqrs\Types\Decoder\ResponseDecoderInterface;
+use Lmc\Cqrs\Types\QueryHandlerInterface;
+use Lmc\Cqrs\Types\SendCommandHandlerInterface;
 use Lmc\Cqrs\Types\Utils;
 use Lmc\Cqrs\Types\ValueObject\DecodedValueInterface;
 use Lmc\Cqrs\Types\ValueObject\PrioritizedItem;
@@ -11,6 +13,9 @@ use Ramsey\Uuid\UuidInterface;
 
 /**
  * @internal
+ *
+ * @phpstan-template Request
+ * @phpstan-template Response
  *
  * @phpstan-template Context
  * @phpstan-template Handler
@@ -70,12 +75,10 @@ trait CommonCQRSTrait
     }
 
     /**
-     * @phpstan-param Handler $handler
+     * @phpstan-param QueryHandlerInterface<Request, Response>|SendCommandHandlerInterface<Request, Response> $handler
      * @phpstan-param Context $context
-     * @param mixed $handler
-     * @param mixed $response
      */
-    private function setIsHandled($handler, AbstractContext $context, $response = null): void
+    private function setIsHandled(QueryHandlerInterface|SendCommandHandlerInterface $handler, AbstractContext $context, mixed $response = null): void
     {
         $context->setIsHandled(true);
 

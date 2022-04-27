@@ -31,17 +31,16 @@ class CallbackSendCommandHandlerTest extends AbstractTestCase
 
     /**
      * @param CommandInterface<callable(): mixed> $command
-     * @param mixed $expectedResult
      *
      * @dataProvider provideCallableCommand
      * @test
      */
-    public function shouldHandleCallableCommand(CommandInterface $command, $expectedResult): void
+    public function shouldHandleCallableCommand(CommandInterface $command, mixed $expectedResult): void
     {
         $this->handler->handle(
             $command,
             new OnSuccessCallback(fn ($data) => $this->assertSame($expectedResult, $data)),
-            new OnErrorCallback(fn (\Throwable $e) => $this->fail($e->getMessage()))
+            new OnErrorCallback(fn (\Throwable $e) => $this->fail($e->getMessage())),
         );
     }
 

@@ -11,17 +11,12 @@ use Lmc\Cqrs\Types\Feature\ProfileableInterface;
  */
 class ProfileableCommandAdapter implements CommandInterface, ProfileableInterface
 {
-    /** @phpstan-var CommandInterface<Request> */
-    private CommandInterface $command;
-    private string $profilerKey;
-    private ?array $profilerData;
-
     /** @phpstan-param CommandInterface<Request> $command */
-    public function __construct(CommandInterface $command, string $profilerKey, ?array $profilerData = null)
-    {
-        $this->command = $command;
-        $this->profilerKey = $profilerKey;
-        $this->profilerData = $profilerData;
+    public function __construct(
+        private CommandInterface $command,
+        private string $profilerKey,
+        private ?array $profilerData = null,
+    ) {
     }
 
     public function getProfilerId(): string
@@ -39,7 +34,7 @@ class ProfileableCommandAdapter implements CommandInterface, ProfileableInterfac
         return $this->command->getRequestType();
     }
 
-    public function createRequest()
+    public function createRequest(): mixed
     {
         return $this->command->createRequest();
     }

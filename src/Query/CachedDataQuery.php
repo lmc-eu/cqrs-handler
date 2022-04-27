@@ -18,17 +18,13 @@ class CachedDataQuery implements QueryInterface, CacheableInterface
      * @var callable
      */
     private $createData;
-    private CacheKey $cacheKey;
-    private CacheTime $cacheTime;
 
     /**
      * @phpstan-param callable(): Data $createData
      */
-    public function __construct(callable $createData, CacheKey $cacheKey, CacheTime $cacheTime)
+    public function __construct(callable $createData, private CacheKey $cacheKey, private CacheTime $cacheTime)
     {
         $this->createData = $createData;
-        $this->cacheKey = $cacheKey;
-        $this->cacheTime = $cacheTime;
     }
 
     final public function getRequestType(): string

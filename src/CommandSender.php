@@ -24,13 +24,13 @@ use Lmc\Cqrs\Types\ValueObject\ProfilerItem;
  * @phpstan-template DecodedResponse
  *
  * @phpstan-type Handler SendCommandHandlerInterface<Request, Response>
- * @phpstan-type Context SendContext<Request, Handler, DecodedResponse>
+ * @phpstan-type Context SendContext<Request, Response>
  *
  * @phpstan-implements CommandSenderInterface<Request, DecodedResponse>
  */
 class CommandSender implements CommandSenderInterface
 {
-    /** @phpstan-use CommonCQRSTrait<Context, Handler> */
+    /** @phpstan-use CommonCQRSTrait<Request, Response, Context, Handler> */
     use CommonCQRSTrait;
 
     /**
@@ -68,7 +68,7 @@ class CommandSender implements CommandSenderInterface
     public function __construct(
         ?ProfilerBag $profilerBag,
         iterable $customHandlers = [],
-        iterable $customDecoders = []
+        iterable $customDecoders = [],
     ) {
         $this->profilerBag = $profilerBag;
 
@@ -146,12 +146,11 @@ class CommandSender implements CommandSenderInterface
      * @phpstan-param ResponseDecoderInterface<T, U> $decoder
      * @phpstan-param T $currentResponse
      * @phpstan-return U
-     * @param mixed $currentResponse
      */
     private function getDecodedResponse(
         SendContext $context,
         ResponseDecoderInterface $decoder,
-        $currentResponse
+        mixed $currentResponse,
     ) {
         return $decoder->decode($currentResponse);
     }
@@ -160,9 +159,8 @@ class CommandSender implements CommandSenderInterface
      * @phpstan-param CommandInterface<Request> $command
      * @phpstan-return DecodedResponse
      * @throws \Throwable
-     * @return mixed
      */
-    public function sendAndReturn(CommandInterface $command)
+    public function sendAndReturn(CommandInterface $command): mixed
     {
         $response = null;
 
@@ -171,7 +169,7 @@ class CommandSender implements CommandSenderInterface
             new OnSuccessCallback(function ($decodedResponse) use (&$response): void {
                 $response = $decodedResponse;
             }),
-            OnErrorCallback::throwOnError()
+            OnErrorCallback::throwOnError(),
         );
 
         return $response;
@@ -181,7 +179,7 @@ class CommandSender implements CommandSenderInterface
     {
         return array_map(
             fn (PrioritizedItem $PrioritizedItem) => $PrioritizedItem->getItem(),
-            $this->handlers
+            $this->handlers,
         );
     }
 
@@ -198,8 +196,8 @@ class CommandSender implements CommandSenderInterface
                     $command->getProfilerId(),
                     $command->getProfilerData(),
                     ProfilerItem::TYPE_COMMAND,
-                    get_class($command)
-                )
+                    get_class($command),
+                ),
             );
 
             $context->startStopwatch();
@@ -219,7 +217,7 @@ class CommandSender implements CommandSenderInterface
             $profilerItem->setHandledBy(sprintf(
                 '%s<%s>',
                 Utils::getType($currentHandler),
-                $context->getHandledResponseType()
+                $context->getHandledResponseType(),
             ));
             $profilerItem->setDecodedBy($context->getUsedDecoders());
 

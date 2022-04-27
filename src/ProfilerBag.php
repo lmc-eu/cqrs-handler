@@ -43,8 +43,8 @@ class ProfilerBag implements \IteratorAggregate, \Countable
         return $this->bag;
     }
 
-    /** @return iterable<ProfilerItem> */
-    public function getIterator(): iterable
+    /** @phpstan-return \Traversable<ProfilerItem> */
+    public function getIterator(): \Traversable
     {
         yield from $this->bag;
     }

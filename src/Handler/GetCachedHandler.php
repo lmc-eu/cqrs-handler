@@ -16,11 +16,8 @@ use Psr\Cache\CacheItemPoolInterface;
  */
 class GetCachedHandler extends AbstractQueryHandler
 {
-    private CacheItemPoolInterface $cache;
-
-    public function __construct(CacheItemPoolInterface $cache)
+    public function __construct(private CacheItemPoolInterface $cache)
     {
-        $this->cache = $cache;
     }
 
     /** @phpstan-param QueryInterface<Request> $query */

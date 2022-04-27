@@ -16,17 +16,13 @@ class ProfiledDataCommand implements CommandInterface, ProfileableInterface
      * @var callable
      */
     private $createData;
-    private string $profilerId;
-    private ?array $profilerData;
 
     /**
      * @phpstan-param callable(): Data $createData
      */
-    public function __construct(callable $createData, string $profilerId, ?array $profilerData = null)
+    public function __construct(callable $createData, private string $profilerId, private ?array $profilerData = null)
     {
         $this->createData = $createData;
-        $this->profilerId = $profilerId;
-        $this->profilerData = $profilerData;
     }
 
     final public function getRequestType(): string

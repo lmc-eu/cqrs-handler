@@ -8,9 +8,8 @@ use Lmc\Cqrs\Types\CommandInterface;
  * @internal
  *
  * @phpstan-template Request
- * @phpstan-template Handler
- * @phpstan-template DecodedResponse
- * @phpstan-extends AbstractContext<CommandInterface<Request>, Handler, DecodedResponse>
+ * @phpstan-template Response
+ * @phpstan-extends AbstractContext<Request, Response>
  */
 class SendContext extends AbstractContext
 {

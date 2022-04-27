@@ -11,17 +11,12 @@ use Lmc\Cqrs\Types\QueryInterface;
  */
 class ProfileableQueryAdapter implements QueryInterface, ProfileableInterface
 {
-    /** @phpstan-var QueryInterface<Request> */
-    private QueryInterface $query;
-    private string $profilerKey;
-    private ?array $profilerData;
-
     /** @phpstan-param QueryInterface<Request> $query */
-    public function __construct(QueryInterface $query, string $profilerKey, ?array $profilerData = null)
-    {
-        $this->query = $query;
-        $this->profilerKey = $profilerKey;
-        $this->profilerData = $profilerData;
+    public function __construct(
+        private QueryInterface $query,
+        private string $profilerKey,
+        private ?array $profilerData = null,
+    ) {
     }
 
     public function getProfilerId(): string
@@ -39,7 +34,7 @@ class ProfileableQueryAdapter implements QueryInterface, ProfileableInterface
         return $this->query->getRequestType();
     }
 
-    public function createRequest()
+    public function createRequest(): mixed
     {
         return $this->query->createRequest();
     }

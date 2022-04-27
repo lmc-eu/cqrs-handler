@@ -23,7 +23,7 @@ abstract class AbstractTestCase extends TestCase
         $this->assertHandledBy($expectedHandlerClass, $expectedResponseType, $lastProfilerItem->getHandledBy());
     }
 
-    protected function assertHandledBy(string $expectedHandlerClass, string $expectedResponseType, string $actual): void
+    protected function assertHandledBy(string $expectedHandlerClass, string $expectedResponseType, ?string $actual): void
     {
         $expected = sprintf('%s<%s>', $expectedHandlerClass, $expectedResponseType);
 

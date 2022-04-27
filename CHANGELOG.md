@@ -3,6 +3,8 @@
 <!-- There should always be "Unreleased" section at the beginning. -->
 
 ## Unreleased
+- Require php 8.1
+  - [**BC**] Use new language features and change method signatures
 
 ## 1.3.0 - 2022-04-05
 - Add handled response type to profiler item

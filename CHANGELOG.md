@@ -3,6 +3,7 @@
 <!-- There should always be "Unreleased" section at the beginning. -->
 
 ## Unreleased
+- Allow `psr/cache` v2
 
 ## 2.0.0 - 2022-04-27
 - Require php 8.1

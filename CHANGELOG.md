@@ -3,6 +3,8 @@
 <!-- There should always be "Unreleased" section at the beginning. -->
 
 ## Unreleased
+
+## 2.1.0 - 2024-01-30
 - Allow `psr/cache` v2
 
 ## 2.0.0 - 2022-04-27

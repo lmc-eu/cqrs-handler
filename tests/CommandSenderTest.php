@@ -18,6 +18,8 @@ use Lmc\Cqrs\Types\ValueObject\OnSuccessCallback;
 use Lmc\Cqrs\Types\ValueObject\OnSuccessInterface;
 use Lmc\Cqrs\Types\ValueObject\PrioritizedItem;
 use Lmc\Cqrs\Types\ValueObject\ProfilerItem;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 
 class CommandSenderTest extends AbstractTestCase
 {
@@ -36,9 +38,7 @@ class CommandSenderTest extends AbstractTestCase
         $this->commandSenderWithoutFeatures = new CommandSender(null);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldSendCommand(): void
     {
         $this->commandSender->addHandler(new DummySendCommandHandler(), PrioritizedItem::PRIORITY_MEDIUM);
@@ -52,9 +52,7 @@ class CommandSenderTest extends AbstractTestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldProfileGivenCommand(): void
     {
         $profilerId = 'some-profiler-id';
@@ -88,9 +86,7 @@ class CommandSenderTest extends AbstractTestCase
         }
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldNotProfileNotProfileableCommand(): void
     {
         $dummyCommand = new DummyCommand('fresh-data');
@@ -104,9 +100,7 @@ class CommandSenderTest extends AbstractTestCase
         $this->assertCount(0, $this->profilerBag);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldNotProfileWithoutProfilerBag(): void
     {
         $profilerId = 'some-profiler-id';
@@ -121,9 +115,7 @@ class CommandSenderTest extends AbstractTestCase
         $this->assertCount(0, $this->profilerBag);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldSendCommandAndDecodeResponse(): void
     {
         $this->commandSender->addHandler(new DummySendCommandHandler(), PrioritizedItem::PRIORITY_MEDIUM);
@@ -140,9 +132,7 @@ class CommandSenderTest extends AbstractTestCase
         $this->assertSame('decoded:fresh-data', $decodedResponse);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldProfileOriginalResponse(): void
     {
         $profilerId = 'some-profiler-id';
@@ -170,9 +160,7 @@ class CommandSenderTest extends AbstractTestCase
         }
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldSendCommandDecodeResponseAndProfileIt(): void
     {
         $profilerId = 'some-profiler-id';
@@ -204,9 +192,7 @@ class CommandSenderTest extends AbstractTestCase
         }
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldThrowExceptionOnSendAndDecodeWithoutAnyHandler(): void
     {
         $command = new DummyCommand('fresh-data');
@@ -216,9 +202,7 @@ class CommandSenderTest extends AbstractTestCase
         $this->commandSender->sendAndReturn($command);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldNotUseMoreThanOneHandler(): void
     {
         $command = new DummyCommand('fresh-data');
@@ -251,9 +235,7 @@ class CommandSenderTest extends AbstractTestCase
         $this->assertSame('fresh-data', $response);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldSendCommandAndUseMultipleDecoders(): void
     {
         $profilerId = 'profiler-id';
@@ -302,9 +284,7 @@ class CommandSenderTest extends AbstractTestCase
         }
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldSendCommandAndUseOnlyOneDecoder(): void
     {
         $profilerId = 'profiler-id';
@@ -355,9 +335,7 @@ class CommandSenderTest extends AbstractTestCase
         }
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldSendConsequentCommand(): void
     {
         $commandA = new ProfileableCommandAdapter(new DummyCommand('response-A'), 'command-A');
@@ -387,10 +365,8 @@ class CommandSenderTest extends AbstractTestCase
         }
     }
 
-    /**
-     * @test
-     * @dataProvider provideVerbosity
-     */
+    #[Test]
+    #[DataProvider('provideVerbosity')]
     public function shouldUseProfilerBagVerbosity(
         string $verbosity,
         bool $withDecoder,
@@ -440,7 +416,7 @@ class CommandSenderTest extends AbstractTestCase
         }
     }
 
-    public function provideVerbosity(): array
+    public static function provideVerbosity(): array
     {
         return [
             // verbosity, withDecoder, expected

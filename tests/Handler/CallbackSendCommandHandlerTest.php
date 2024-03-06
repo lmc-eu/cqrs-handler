@@ -7,6 +7,8 @@ use Lmc\Cqrs\Handler\Command\ProfiledDataCommand;
 use Lmc\Cqrs\Types\CommandInterface;
 use Lmc\Cqrs\Types\ValueObject\OnErrorCallback;
 use Lmc\Cqrs\Types\ValueObject\OnSuccessCallback;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 
 class CallbackSendCommandHandlerTest extends AbstractTestCase
 {
@@ -20,10 +22,9 @@ class CallbackSendCommandHandlerTest extends AbstractTestCase
 
     /**
      * @param CommandInterface<callable(): mixed> $command
-     *
-     * @dataProvider provideCallableCommand
-     * @test
      */
+    #[Test]
+    #[DataProvider('provideCallableCommand')]
     public function shouldSupportCallableCommand(CommandInterface $command): void
     {
         $this->assertTrue($this->handler->supports($command));
@@ -31,10 +32,9 @@ class CallbackSendCommandHandlerTest extends AbstractTestCase
 
     /**
      * @param CommandInterface<callable(): mixed> $command
-     *
-     * @dataProvider provideCallableCommand
-     * @test
      */
+    #[Test]
+    #[DataProvider('provideCallableCommand')]
     public function shouldHandleCallableCommand(CommandInterface $command, mixed $expectedResult): void
     {
         $this->handler->handle(
@@ -44,7 +44,7 @@ class CallbackSendCommandHandlerTest extends AbstractTestCase
         );
     }
 
-    public function provideCallableCommand(): array
+    public static function provideCallableCommand(): array
     {
         return [
             // command, expectedResult

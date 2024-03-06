@@ -10,6 +10,8 @@ use Lmc\Cqrs\Types\ValueObject\CacheKey;
 use Lmc\Cqrs\Types\ValueObject\CacheTime;
 use Lmc\Cqrs\Types\ValueObject\OnErrorCallback;
 use Lmc\Cqrs\Types\ValueObject\OnSuccessCallback;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 
 class CallbackQueryHandlerTest extends AbstractTestCase
 {
@@ -23,10 +25,9 @@ class CallbackQueryHandlerTest extends AbstractTestCase
 
     /**
      * @param QueryInterface<callable(): mixed> $query
-     *
-     * @dataProvider provideCallableQuery
-     * @test
      */
+    #[Test]
+    #[DataProvider('provideCallableQuery')]
     public function shouldSupportCallableQuery(QueryInterface $query): void
     {
         $this->assertTrue($this->handler->supports($query));
@@ -34,10 +35,9 @@ class CallbackQueryHandlerTest extends AbstractTestCase
 
     /**
      * @param QueryInterface<callable(): mixed> $query
-     *
-     * @dataProvider provideCallableQuery
-     * @test
      */
+    #[Test]
+    #[DataProvider('provideCallableQuery')]
     public function shouldHandleCallableQuery(QueryInterface $query, mixed $expectedResult): void
     {
         $this->handler->handle(
@@ -47,7 +47,7 @@ class CallbackQueryHandlerTest extends AbstractTestCase
         );
     }
 
-    public function provideCallableQuery(): array
+    public static function provideCallableQuery(): array
     {
         return [
             // query, expectedResult

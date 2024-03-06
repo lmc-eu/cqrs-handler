@@ -24,6 +24,8 @@ use Lmc\Cqrs\Types\ValueObject\OnSuccessCallback;
 use Lmc\Cqrs\Types\ValueObject\OnSuccessInterface;
 use Lmc\Cqrs\Types\ValueObject\PrioritizedItem;
 use Lmc\Cqrs\Types\ValueObject\ProfilerItem;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use Psr\Cache\CacheItemPoolInterface;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
 
@@ -46,18 +48,14 @@ class QueryFetcherTest extends AbstractTestCase
         $this->queryFetcherWithoutFeatures = new QueryFetcher(false, null, null);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldHaveDefaultHandlers(): void
     {
         $this->assertNotEmpty($this->queryFetcher->getHandlers());
         $this->assertEmpty($this->queryFetcherWithoutFeatures->getHandlers());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldNotFetchNotCacheableQueryFromCache(): void
     {
         $key = new CacheKey('some-key');
@@ -79,9 +77,7 @@ class QueryFetcherTest extends AbstractTestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldFetchQueryDataFromCache(): void
     {
         $key = new CacheKey('some-key');
@@ -98,9 +94,7 @@ class QueryFetcherTest extends AbstractTestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldFetchQueryDataByHandler(): void
     {
         $this->queryFetcher->addHandler(new DummyQueryHandler(), PrioritizedItem::PRIORITY_LOWEST);
@@ -114,9 +108,7 @@ class QueryFetcherTest extends AbstractTestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldFetchQueryDataFromCacheAndNotByHandler(): void
     {
         $key = new CacheKey('some-key');
@@ -135,9 +127,7 @@ class QueryFetcherTest extends AbstractTestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldFetchQueryDataFromHandlerWithHigherPriorityAndCacheThem(): void
     {
         $key = new CacheKey('some-key');
@@ -160,9 +150,7 @@ class QueryFetcherTest extends AbstractTestCase
         $this->assertSame('fresh-data', $item->get());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldFetchFreshQueryDataAndCacheThem(): void
     {
         $key = new CacheKey('some-key');
@@ -185,9 +173,7 @@ class QueryFetcherTest extends AbstractTestCase
         $this->assertSame('fresh-data', $item->get());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldNotFetchQueryDataWithNoCacheGiven(): void
     {
         $key = new CacheKey('some-key');
@@ -207,9 +193,7 @@ class QueryFetcherTest extends AbstractTestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldNotFetchQueryDataWithNoItemInCache(): void
     {
         $key = new CacheKey('some-key');
@@ -227,9 +211,7 @@ class QueryFetcherTest extends AbstractTestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldNotFetchExpiredData(): void
     {
         $key = new CacheKey('some-key');
@@ -251,9 +233,7 @@ class QueryFetcherTest extends AbstractTestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldNotFetchCachedDataFromCacheWithNoCacheTime(): void
     {
         $key = new CacheKey('some-key');
@@ -275,9 +255,7 @@ class QueryFetcherTest extends AbstractTestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldNotFetchCachedDataFromCacheWithDisabledCacheAndDontChangeThemInCache(): void
     {
         $key = new CacheKey('some-key');
@@ -314,9 +292,7 @@ class QueryFetcherTest extends AbstractTestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldInvalidateCachedItemByQuery(): void
     {
         $profilerId = 'profiler-id';
@@ -364,9 +340,7 @@ class QueryFetcherTest extends AbstractTestCase
         $this->assertCount(3, $this->profilerBag);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldInvalidateCachedItemByHashedKey(): void
     {
         $profilerId = 'profiler-id';
@@ -425,9 +399,7 @@ class QueryFetcherTest extends AbstractTestCase
         $this->cache->save($item);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldProfileGivenQuery(): void
     {
         $profilerId = 'some-profiler-key';
@@ -457,9 +429,7 @@ class QueryFetcherTest extends AbstractTestCase
         }
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldProfileGivenCacheableQuery(): void
     {
         $profilerId = 'some-profiler-key';
@@ -498,9 +468,7 @@ class QueryFetcherTest extends AbstractTestCase
         }
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldProfileGivenCacheableQueryFetchedFromCache(): void
     {
         $profilerId = 'some-profiler-key';
@@ -542,9 +510,7 @@ class QueryFetcherTest extends AbstractTestCase
         }
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldNotProfileNotProfileableQuery(): void
     {
         $dummyQuery = new DummyQuery('fresh-data');
@@ -558,9 +524,7 @@ class QueryFetcherTest extends AbstractTestCase
         $this->assertCount(0, $this->profilerBag);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldNotProfileWithoutProfilerBag(): void
     {
         $profilerId = 'some-profiler-key';
@@ -575,9 +539,7 @@ class QueryFetcherTest extends AbstractTestCase
         $this->assertCount(0, $this->profilerBag);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldFetchAndDecodeQuery(): void
     {
         $this->queryFetcher->addHandler(new DummyQueryHandler(), PrioritizedItem::PRIORITY_MEDIUM);
@@ -595,9 +557,7 @@ class QueryFetcherTest extends AbstractTestCase
         $this->assertSame('decoded:fresh-data', $decodedResponse);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldFetchAndDecodeQueryAndProfileOriginalResponse(): void
     {
         $profilerId = 'profiler-id';
@@ -624,9 +584,7 @@ class QueryFetcherTest extends AbstractTestCase
         }
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldFetchFromCacheAndDecodeQueryAndProfileIt(): void
     {
         $profilerId = 'profiler-id';
@@ -674,9 +632,7 @@ class QueryFetcherTest extends AbstractTestCase
         }
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldFetchFreshQuery(): void
     {
         $key = new CacheKey('some-key');
@@ -693,9 +649,7 @@ class QueryFetcherTest extends AbstractTestCase
         $this->assertSame('cached-value', $decodedResponse);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldThrowExceptionOnFetchAndDecodeWithoutAnyHandler(): void
     {
         $query = new DummyQuery('fresh-data');
@@ -705,9 +659,7 @@ class QueryFetcherTest extends AbstractTestCase
         $this->queryFetcher->fetchAndReturn($query);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldNotUseMoreThanOneHandler(): void
     {
         $query = new DummyQuery('fresh-data');
@@ -740,9 +692,7 @@ class QueryFetcherTest extends AbstractTestCase
         $this->assertSame('fresh-data', $response);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldFetchQueryAndUseMultipleDecodersAndCacheTheFinalResult(): void
     {
         $profilerId = 'profiler-id';
@@ -797,9 +747,7 @@ class QueryFetcherTest extends AbstractTestCase
         }
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldFetchQueryAndUseOnlyOneDecoder(): void
     {
         $profilerId = 'profiler-id';
@@ -856,9 +804,7 @@ class QueryFetcherTest extends AbstractTestCase
         }
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldFetchConsequentQuery(): void
     {
         $queryA = new ProfileableQueryAdapter(new DummyQuery('response-A'), 'query-A');
@@ -888,9 +834,7 @@ class QueryFetcherTest extends AbstractTestCase
         }
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldCacheResponseBeforeDecodingByImpureDecoder(): void
     {
         $onError = new OnErrorCallback(fn (\Throwable $error) => $this->fail($error->getMessage()));
@@ -931,10 +875,8 @@ class QueryFetcherTest extends AbstractTestCase
         $this->assertSame('fresh-data', $item->get());
     }
 
-    /**
-     * @test
-     * @dataProvider provideVerbosity
-     */
+    #[Test]
+    #[DataProvider('provideVerbosity')]
     public function shouldUseProfilerBagVerbosity(
         string $verbosity,
         bool $withDecoder,
@@ -988,7 +930,7 @@ class QueryFetcherTest extends AbstractTestCase
         }
     }
 
-    public function provideVerbosity(): array
+    public static function provideVerbosity(): array
     {
         return [
             // verbosity, withDecoder, expected

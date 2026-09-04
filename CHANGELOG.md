@@ -3,6 +3,8 @@
 <!-- There should always be "Unreleased" section at the beginning. -->
 
 ## Unreleased
+
+## 2.3.0 - 2026-06-04
 - Add support for Symfony 8
 
 ## 2.2.0 - 2024-03-06

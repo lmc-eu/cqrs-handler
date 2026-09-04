@@ -3,6 +3,7 @@
 <!-- There should always be "Unreleased" section at the beginning. -->
 
 ## Unreleased
+- Add support for Symfony 8
 
 ## 2.2.0 - 2024-03-06
 - Drop support for php 8.1
